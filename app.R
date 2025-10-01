@@ -22,7 +22,9 @@ stations <- readr::read_csv("data/stations.csv") |>
 names(stations) <- names(stations) |> 
   stringr::str_remove_all("Line[s]?")
 
-ui <- fixedPage(
+ui <- tagList(
+  tags$head(tags$style("body{overflow:hidden;}")),
+  fixedPage(
   title = "Stagtracker",
   theme = bslib::bs_theme(
     version = 5L,
@@ -77,6 +79,7 @@ ui <- fixedPage(
   #   )
   # )
 )
+)
 
 server <- function(input, output, session) {
   train_times <- reactive({
@@ -127,7 +130,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     .data |> 
-      filter(row_number() <= 7) |> 
+      filter(row_number() <= 5) |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
