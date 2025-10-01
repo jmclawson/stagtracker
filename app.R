@@ -15,8 +15,11 @@ if (file.exists("my_key.R")) {
   api_key <- "a8456dcbhf8475683cf7818bca81"
 }
 
-stations <- readr::read_csv("stations.csv") |> 
+stations <- readr::read_csv("data/stations.csv") |> 
   {\(x) setNames(x$id, x$station)}()
+
+names(stations) <- names(stations) |> 
+  stringr::str_remove_all("Line[s]?")
 
 ui <- fluidPage(
   theme = bslib::bs_theme(
@@ -28,7 +31,7 @@ ui <- fluidPage(
   htmlOutput("timetable"),
   fixedRow(
     column(
-      width = 3,
+      width = 2,
       align = "center",
       style = css(padding.top = px(6 + 16 + 2)),
       radioGroupButtons(
@@ -37,7 +40,7 @@ ui <- fluidPage(
       )
     ),
     column(
-      width = 9,
+      width = 6,
       pickerInput(
         "station", "",
         selected = 41320,
@@ -79,6 +82,7 @@ server <- function(input, output, session) {
         ) |> paste("minutes") |> 
           str_replace_all("^0 minutes", "due") |> 
           str_replace_all("-1 minutes", "due") |> 
+          str_replace_all("^-.*", "overdue") |> 
           str_replace_all("^1 minutes", "1 minute")) |> 
       arrange(est) |> 
       select(line, dest, estimated, direction)
