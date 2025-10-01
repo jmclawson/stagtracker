@@ -8,6 +8,7 @@ library(gt)
 library(lubridate)
 library(stringr)
 library(shinyWidgets)
+library(shinyfullscreen)
 
 if (file.exists("my_key.R")) {
   source("my_key.R")
@@ -21,26 +22,27 @@ stations <- readr::read_csv("data/stations.csv") |>
 names(stations) <- names(stations) |> 
   stringr::str_remove_all("Line[s]?")
 
-ui <- fluidPage(
+ui <- fixedPage(
+  title = "Stagtracker",
   theme = bslib::bs_theme(
     version = 5L,
     bg = "black",
     fg = "white",
     preset = "flatly"
   ),
+  fullscreen_all(click_id = "timetable", bg_color = "black"),
   htmlOutput("timetable"),
-  fixedRow(
-    column(
-      width = 2,
-      align = "center",
-      style = css(padding.top = px(6 + 16 + 2)),
+  div(
+    style = "width: 390px !important;",
+    div(
+      style = "width: 80px !important; float: left;",
       radioGroupButtons(
         inputId = "arrow_choice",
         choices = c("▼", "▲")
       )
     ),
-    column(
-      width = 6,
+    div(
+      style = "width: 300px !important; margin-top: -24px; float: left;",
       pickerInput(
         "station", "",
         selected = 41320,
@@ -51,6 +53,29 @@ ui <- fluidPage(
       )
     )
   )
+  # fixedRow(
+  #   column(
+  #     width = 2,
+  #     align = "center",
+  #     # style = css(padding.top = px(6 + 16 + 2)),
+  #     radioGroupButtons(
+  #       inputId = "arrow_choice",
+  #       choices = c("▼", "▲")
+  #     )
+  #   ),
+  #   column(
+  #     width = 6,
+  #     style = css(margin.top = px(-24), flex.shrink = 2),
+  #     pickerInput(
+  #       "station", "",
+  #       selected = 41320,
+  #       choices = stations,
+  #       options = pickerOptions(
+  #         liveSearch = TRUE
+  #       )
+  #     )
+  #   )
+  # )
 )
 
 server <- function(input, output, session) {
@@ -102,6 +127,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     .data |> 
+      filter(row_number() <= 7) |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
