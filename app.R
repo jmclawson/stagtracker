@@ -130,7 +130,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     .data |> 
-      filter(row_number() <= 5) |> 
+      filter(row_number() <= 4) |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
