@@ -124,8 +124,16 @@ server <- function(input, output, session) {
   })
   
   style_timetable_gt <- function(.data){
-    df_gt <- .data |> 
-      filter(row_number() <= 4) |> 
+    
+    if ("R" %in% input$limit_red) {
+      df_gt <- .data |> 
+        filter(row_number() <= 3)
+    } else {
+      df_gt <- .data |> 
+        filter(row_number() <= 5)
+    }
+    
+    df_gt <- df_gt |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
