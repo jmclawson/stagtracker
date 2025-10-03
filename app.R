@@ -35,7 +35,7 @@ ui <- tagList(
   fullscreen_all(click_id = "timetable", bg_color = "black"),
   htmlOutput("timetable"),
   div(
-    style = "width: 390px !important;",
+    # style = "width: 470px !important;",
     div(
       style = "width: 80px !important; float: left;",
       radioGroupButtons(
@@ -53,31 +53,19 @@ ui <- tagList(
           liveSearch = TRUE
         )
       )
-    )
+    ),
+    conditionalPanel(
+      condition = "input.station == 41320",
+      div(
+        style = "float: right; margin-top: -24px;",
+        checkboxGroupButtons(
+          inputId = "limit_red",
+          label = "", 
+          choices = c("R")
+        )
+        )
+    ),
   )
-  # fixedRow(
-  #   column(
-  #     width = 2,
-  #     align = "center",
-  #     # style = css(padding.top = px(6 + 16 + 2)),
-  #     radioGroupButtons(
-  #       inputId = "arrow_choice",
-  #       choices = c("▼", "▲")
-  #     )
-  #   ),
-  #   column(
-  #     width = 6,
-  #     style = css(margin.top = px(-24), flex.shrink = 2),
-  #     pickerInput(
-  #       "station", "",
-  #       selected = 41320,
-  #       choices = stations,
-  #       options = pickerOptions(
-  #         liveSearch = TRUE
-  #       )
-  #     )
-  #   )
-  # )
 )
 )
 
@@ -91,7 +79,7 @@ server <- function(input, output, session) {
       max = 20,
       mapid = input$station)
     
-    full_query |> 
+    the_df <- full_query |> 
       read_xml() |> 
       xml_find_all("//eta") |> 
       map_dfr(\(tr) {
@@ -114,6 +102,13 @@ server <- function(input, output, session) {
           str_replace_all("^1 minutes", "1 minute")) |> 
       arrange(est) |> 
       select(line, dest, estimated, direction)
+    
+    if ("R" %in% input$limit_red) {
+     the_df <- the_df |> 
+       filter(line == "Red")
+    }
+    
+    the_df
   })
   
   train_times_south <- reactive({
@@ -129,7 +124,7 @@ server <- function(input, output, session) {
   })
   
   style_timetable_gt <- function(.data){
-    .data |> 
+    df_gt <- .data |> 
       filter(row_number() <= 4) |> 
       gt() |> 
       tab_style(
@@ -199,6 +194,13 @@ server <- function(input, output, session) {
         locations = cells_body()
       )
     
+    if (nrow(.data) < 4) {
+      df_gt <- df_gt |> 
+        text_replace("minute[s]?", "min", locations = cells_body(columns = estimated)) |> 
+        tab_options(table.font.size = pct(160))
+    }
+    
+    df_gt
   }
   
   output$timetable <- shiny::renderUI({
