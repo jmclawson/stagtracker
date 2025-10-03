@@ -123,17 +123,42 @@ server <- function(input, output, session) {
       select(-direction)
   })
   
+  observeEvent(input$station, {
+    updateCheckboxGroupButtons(
+      session = session,
+      inputId = "limit_red",
+      selected = NA
+    )
+  })
+  
+  observe({
+    invalidateLater(3 * 60 * 60 * 1000, session) # hr, min, sec, ms
+    if (hour(now(tz = "US/Central")) %in% 6:11 & input$station == 41320) {
+      updateCheckboxGroupButtons(
+        session = session,
+        inputId = "limit_red",
+        selected = "R"
+      )
+    } else {
+      updateCheckboxGroupButtons(
+        session = session,
+        inputId = "limit_red",
+        selected = NULL
+      )
+    }
+  })
+  
   style_timetable_gt <- function(.data){
     
     if ("R" %in% input$limit_red) {
-      df_gt <- .data |> 
+      .data <- .data |> 
         filter(row_number() <= 3)
     } else {
-      df_gt <- .data |> 
+      .data <- .data |> 
         filter(row_number() <= 5)
     }
     
-    df_gt <- df_gt |> 
+    df_gt <- .data |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
