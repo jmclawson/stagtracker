@@ -132,14 +132,27 @@ server <- function(input, output, session) {
   })
   
   observe({
-    invalidateLater(3 * 60 * 60 * 1000, session) # hr, min, sec, ms
-    if (hour(now(tz = "US/Central")) %in% 6:11 & input$station == 41320) {
+    invalidateLater(1 * 30 * 60 * 1000, session) # hr, min, sec, ms
+    if (input$station == 41320 && hour(now(tz = "US/Central")) %in% 6:11 && wday(now()) %in% 2:6) {
+      # weekday morns, limit to Red
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_red",
         selected = "R"
       )
+    } else if (input$station == 41320 && hour(now(tz = "US/Central")) %in% 19:23) {
+      # evenings, show all bidirectional
+      updateCheckboxGroupButtons(
+        session = session,
+        inputId = "limit_red",
+        selected = NULL
+      )
+      updateRadioGroupButtons(
+        session = session,
+        inputId = "arrow_choice",
+        selected = character(0))
     } else {
+      # generally, show all south
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_red",
@@ -229,19 +242,30 @@ server <- function(input, output, session) {
     
     if (nrow(.data) < 4) {
       df_gt <- df_gt |> 
-        text_replace("minute[s]?", "min", locations = cells_body(columns = estimated)) |> 
         tab_options(table.font.size = pct(160))
     }
     
-    df_gt
+    df_gt |> 
+      text_replace("minute[s]?", "min", locations = cells_body(columns = estimated)) |> 
+      text_replace("([0-9]+)", "<b>\\1</b>", locations = cells_body(columns = estimated)) |> 
+      fmt_markdown(columns = estimated) |> 
+      tab_style(
+        style = cell_text(
+          size = pct(115),
+          align = "center"),
+        locations = cells_body(columns = estimated))
   }
   
   output$timetable <- shiny::renderUI({
-    if(input$arrow_choice == "▼") {
+    if(length(input$arrow_choice) > 0 && input$arrow_choice == "▼") {
       train_times_south() |> 
         style_timetable_gt()
-    } else {
+    } else if(length(input$arrow_choice) > 0 && input$arrow_choice == "▲"){
       train_times_north() |> 
+        style_timetable_gt()
+    } else {
+      train_times() |> 
+        select(-direction) |> 
         style_timetable_gt()
     }
   })
