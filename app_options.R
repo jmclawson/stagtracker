@@ -6,7 +6,7 @@ home_station <- 41320
 
 # Primary line for commute
 commute <- "Red"
-commute_label <- substr(home_line, 1, 1)
+commute_label <- substr(commute, 1, 1)
 
 # Limit number of rows shown
 show_rows <- 5
