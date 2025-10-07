@@ -1,6 +1,6 @@
-Simple Shiny app for real-time tracking CTA arrivals at a station.
+# Real-time train tracking
 
-This app shows a small UI designed to run on a Raspberry Pi using a small touchscreen [like this one](https://www.amazon.com/dp/B0CXTFN8K9?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1). I'm running it on a Raspberry Pi 4, since that's the hobby kit I had sitting around.
+Shiny app with minimal UI for arrivals at a CTA station, designed for a Raspberry Pi with a small touchscreen [like this one](https://www.amazon.com/dp/B0CXTFN8K9?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1).
 
 ## Setup
 
@@ -20,5 +20,19 @@ Every sixty seconds, the app requests updated data using the API provided. Durin
 
 Clicking on the table makes it run full screen. 
 
-Sample output:
+## Images
 
+<dl>
+<dt>Southbound from Belmont</dt>
+<dd><img width="770" height="447" alt="Screenshot 2025-10-07 at 8 14 19 AM" src="https://github.com/user-attachments/assets/cbbfa29c-b612-4f4b-9389-09cfcceed1d0" /></dd>
+
+<dt>Clark and Lake on device</dt>
+<dd><img width="4032" height="3024" alt="clark_lake" src="https://github.com/user-attachments/assets/40df18af-2c8e-4024-9f6a-75bbbcac5a21" /></dd>
+
+<dt>Belmont commute</dt>
+<dd><img width="4032" height="3024" alt="belmont_commute" src="https://github.com/user-attachments/assets/9e785c23-4575-4ed9-8e4f-d23656f4cf5f" /></dd>
+
+<dt>Station Picker</dt>
+<dd><img width="3534" height="2601" alt="station_picker" src="https://github.com/user-attachments/assets/ffa4447a-1d41-4e81-bb72-44ac43034004" /></dd>
+
+</dl>
