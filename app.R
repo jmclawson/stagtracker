@@ -243,7 +243,7 @@ server <- function(input, output, session) {
       tab_style(
         locations = cells_body(columns = dest),
         style = css(
-          padding = paste0(c(0, 0, 0, 2), "em")
+          padding = paste0(c(0, 0, 0, 20), "px")
         )
       ) |> 
       tab_options(
@@ -265,7 +265,7 @@ server <- function(input, output, session) {
     
     if (nrow(.data) <= show_rows * .6) {
       df_gt <- df_gt |> 
-        tab_options(table.font.size = pct(160))
+        tab_options(table.font.size = pct(175))
     }
     
     df_gt |> 
