@@ -36,3 +36,7 @@ Clicking on the table makes it run full screen.
 <dd><img width="3534" height="2601" alt="station_picker" src="https://github.com/user-attachments/assets/ffa4447a-1d41-4e81-bb72-44ac43034004" /></dd>
 
 </dl>
+
+## Stagtracker?
+
+In honor of [The Last Stag](https://hollowknight.fandom.com/wiki/Last_Stag).
