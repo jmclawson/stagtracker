@@ -32,7 +32,7 @@ Clicking on the table makes it run full screen.
 <dt>Belmont commute</dt>
 <dd><img width="4032" height="3024" alt="belmont_commute" src="https://github.com/user-attachments/assets/9e785c23-4575-4ed9-8e4f-d23656f4cf5f" /></dd>
 
-<dt>Station Picker</dt>
+<dt>Station picker with large nub for scrolling</dt>
 <dd><img width="3534" height="2601" alt="station_picker" src="https://github.com/user-attachments/assets/ffa4447a-1d41-4e81-bb72-44ac43034004" /></dd>
 
 </dl>

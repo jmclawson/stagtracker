@@ -5,6 +5,7 @@ api_key <- "a0000aaaaa0000000aa0000aaa00"
 home_station <- 41320
 
 # Primary line for commute
+# Options are Red, Org, Y, G, Blue, P, Brn, Pink 
 commute <- "Red"
 commute_label <- substr(commute, 1, 1)
 

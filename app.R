@@ -39,6 +39,16 @@ ui <- tagList(
       border: gray solid 1px;
       background: #333;
     }
+    
+    .gt_table {
+      color: white !important;
+      text-shadow: 1px 1px 3px #000000;
+    }
+    
+    [style*='background-color: #F9E300;'] {
+      color: black !important;
+      text-shadow: 1px 1px 3px #FFFFFF;
+    }
                        ")),
   fixedPage(
   title = "Stagtracker",
@@ -198,44 +208,28 @@ server <- function(input, output, session) {
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
-        style = list(
-          cell_fill("#FF0000"), 
-          cell_text(color = "#FFFFFF"))) |>
+        style = list(cell_fill("#C60C30"))) |>
       tab_style(
         locations = cells_body(rows = line == "Brn"), 
-        style = list(
-          cell_fill("#662200"), 
-          cell_text(color = "#FFFFFF"))) |>
+        style = list(cell_fill("#62361b"))) |>
       tab_style(
         locations = cells_body(rows = line == "Blue"), 
-        style = list(
-          cell_fill("#0000FF"), 
-          cell_text(color = "#FFFFFF"))) |>
+        style = list(cell_fill("#00a1de"))) |>
       tab_style(
         locations = cells_body(rows = line == "G"), 
-        style = list(
-          cell_fill("#007700"), 
-          cell_text(color = "#FFFFFF"))) |>
+        style = list(cell_fill("#009b3a"))) |>
       tab_style(
         locations = cells_body(rows = line == "Org"), 
-        style = list(
-          cell_fill("#FF7700"), 
-          cell_text(color = "#000000"))) |>
+        style = list(cell_fill("#f9461c"))) |>
       tab_style(
         locations = cells_body(rows = line == "Pink"), 
-        style = list(
-          cell_fill("#FF66AA"), 
-          cell_text(color = "#000000"))) |>
+        style = list(cell_fill("#e27ea6"))) |>
       tab_style(
         locations = cells_body(rows = line == "Y"), 
-        style = list(
-          cell_fill("#FFFF00"), 
-          cell_text(color = "#000000"))) |>
+        style = list(cell_fill("#F9E300"))) |>
       tab_style(
         locations = cells_body(rows = line == "P"), 
-        style = list(
-          cell_fill("#6600AA"), 
-          cell_text(color = "#FFFFFF"))) |> 
+        style = list(cell_fill("#522398"))) |> 
       cols_hide("line") |>
       cols_width(
         estimated ~ px(110)
