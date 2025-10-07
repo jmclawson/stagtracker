@@ -10,10 +10,10 @@ library(stringr)
 library(shinyWidgets)
 library(shinyfullscreen)
 
+source("app_options.R")
+
 if (file.exists("my_key.R")) {
   source("my_key.R")
-} else {
-  api_key <- "a8456dcbhf8475683cf7818bca81"
 }
 
 stations <- readr::read_csv("data/stations.csv") |> 
@@ -23,7 +23,23 @@ names(stations) <- names(stations) |>
   stringr::str_remove_all("Line[s]?")
 
 ui <- tagList(
-  tags$head(tags$style("body{overflow:hidden;}")),
+  tags$head(tags$style("
+    body { 
+      overflow: hidden;
+    }
+    
+    .inner.show::-webkit-scrollbar {
+      width: 2em;
+    }
+    
+    .inner.show::-webkit-scrollbar-thumb {
+      width: 2em;
+      height: 2em;
+      border-radius: 0.25em;
+      border: gray solid 1px;
+      background: #333;
+    }
+                       ")),
   fixedPage(
   title = "Stagtracker",
   theme = bslib::bs_theme(
@@ -40,28 +56,35 @@ ui <- tagList(
       style = "width: 80px !important; float: left;",
       radioGroupButtons(
         inputId = "arrow_choice",
-        choices = c("▼", "▲")
+        choices = direction_order
       )
     ),
     div(
       style = "width: 300px !important; margin-top: -24px; float: left;",
       pickerInput(
         "station", "",
-        selected = 41320,
+        selected = home_station,
         choices = stations,
         options = pickerOptions(
-          liveSearch = TRUE
-        )
+            liveSearch = FALSE
+            ),
+        choicesOpt = 
+          list(
+            class = "choicePicker"
+          )
       )
     ),
+    div(
+      style = "display: none;",
+      textInput("my_station", "", home_station)),
     conditionalPanel(
-      condition = "input.station == 41320",
+      condition = "input.station == input.my_station",
       div(
         style = "float: right; margin-top: -24px;",
         checkboxGroupButtons(
-          inputId = "limit_red",
+          inputId = "limit_line",
           label = "", 
-          choices = c("R")
+          choices = c(home_line_label)
         )
         )
     ),
@@ -103,9 +126,9 @@ server <- function(input, output, session) {
       arrange(est) |> 
       select(line, dest, estimated, direction)
     
-    if ("R" %in% input$limit_red) {
+    if (home_line_label %in% input$limit_line) {
      the_df <- the_df |> 
-       filter(line == "Red")
+       filter(line == home_line)
     }
     
     the_df
@@ -126,7 +149,7 @@ server <- function(input, output, session) {
   observeEvent(input$station, {
     updateCheckboxGroupButtons(
       session = session,
-      inputId = "limit_red",
+      inputId = "limit_line",
       selected = NA
     )
   })
@@ -137,14 +160,14 @@ server <- function(input, output, session) {
       # weekday morns, limit to Red
       updateCheckboxGroupButtons(
         session = session,
-        inputId = "limit_red",
-        selected = "R"
+        inputId = "limit_line",
+        selected = home_line_label
       )
     } else if (input$station == 41320 && hour(now(tz = "US/Central")) %in% 19:23) {
       # evenings, show all bidirectional
       updateCheckboxGroupButtons(
         session = session,
-        inputId = "limit_red",
+        inputId = "limit_line",
         selected = NULL
       )
       updateRadioGroupButtons(
@@ -155,7 +178,7 @@ server <- function(input, output, session) {
       # generally, show all south
       updateCheckboxGroupButtons(
         session = session,
-        inputId = "limit_red",
+        inputId = "limit_line",
         selected = NULL
       )
     }
@@ -163,7 +186,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     
-    if ("R" %in% input$limit_red) {
+    if (home_line_label %in% input$limit_line) {
       .data <- .data |> 
         filter(row_number() <= 3)
     } else {
