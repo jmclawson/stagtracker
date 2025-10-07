@@ -5,8 +5,11 @@ api_key <- "a0000aaaaa0000000aa0000aaa00"
 home_station <- 41320
 
 # Primary line for commute
-home_line <- "Red"
-home_line_label <- substr(home_line, 1, 1)
+commute <- "Red"
+commute_label <- substr(home_line, 1, 1)
+
+# Limit number of rows shown
+show_rows <- 5
 
 # Adjust the order to favor ▲
 direction_order <- c("▼", "▲")

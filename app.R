@@ -84,7 +84,7 @@ ui <- tagList(
         checkboxGroupButtons(
           inputId = "limit_line",
           label = "", 
-          choices = c(home_line_label)
+          choices = c(commute_label)
         )
         )
     ),
@@ -126,9 +126,9 @@ server <- function(input, output, session) {
       arrange(est) |> 
       select(line, dest, estimated, direction)
     
-    if (home_line_label %in% input$limit_line) {
+    if (commute_label %in% input$limit_line) {
      the_df <- the_df |> 
-       filter(line == home_line)
+       filter(line == commute)
     }
     
     the_df
@@ -156,14 +156,14 @@ server <- function(input, output, session) {
   
   observe({
     invalidateLater(1 * 30 * 60 * 1000, session) # hr, min, sec, ms
-    if (input$station == 41320 && hour(now(tz = "US/Central")) %in% 6:11 && wday(now()) %in% 2:6) {
+    if (input$station == home_station && hour(now(tz = "US/Central")) %in% 6:11 && wday(now()) %in% 2:6) {
       # weekday morns, limit to Red
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_line",
-        selected = home_line_label
+        selected = commute_label
       )
-    } else if (input$station == 41320 && hour(now(tz = "US/Central")) %in% 19:23) {
+    } else if (input$station == home_station && hour(now(tz = "US/Central")) %in% 19:23) {
       # evenings, show all bidirectional
       updateCheckboxGroupButtons(
         session = session,
@@ -186,12 +186,12 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     
-    if (home_line_label %in% input$limit_line) {
+    if (commute_label %in% input$limit_line) {
       .data <- .data |> 
-        filter(row_number() <= 3)
+        filter(row_number() <= show_rows * .6)
     } else {
       .data <- .data |> 
-        filter(row_number() <= 5)
+        filter(row_number() <= show_rows)
     }
     
     df_gt <- .data |> 
@@ -263,7 +263,7 @@ server <- function(input, output, session) {
         locations = cells_body()
       )
     
-    if (nrow(.data) < 4) {
+    if (nrow(.data) <= show_rows * .6) {
       df_gt <- df_gt |> 
         tab_options(table.font.size = pct(160))
     }
