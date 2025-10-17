@@ -257,7 +257,7 @@ server <- function(input, output, session) {
         ) |> paste("minutes") |> 
           str_replace_all("^0 minutes", "due") |> 
           str_replace_all("-1 minutes", "due") |> 
-          str_replace_all("^-.*", "overdue") |> 
+          str_replace_all("^-.*", "late") |> 
           str_replace_all("^1 minutes", "1 minute")) |> 
       select(-est) |> 
       gt() |> 
