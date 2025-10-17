@@ -95,9 +95,11 @@ ui <- tagList(
     ),
     fullscreen_all(click_id = "timetable", bg_color = "black"),
     div(
+      style = "position: absolute; bottom: 5px; width: 100vw; padding-right: 24px;",
+    div(
       # style = "width: 470px !important;",
       div(
-        style = "width: 300px !important; margin-top: -24px; float: left;",
+        style = "width: 300px !important; float: left;",
         pickerInput(
           "station", "",
           selected = home_station,
@@ -114,7 +116,7 @@ ui <- tagList(
       conditionalPanel(
         condition = "input.map_toggle != '🌎'",
         div(
-          style = "width: 40px !important; float: left;",
+          style = "width: 40px !important; float: left; margin-top: 24px;",
           uiOutput("arrow_button")
         )
       ),
@@ -123,7 +125,7 @@ ui <- tagList(
         textInput("my_station", "", home_station)
       ),
       div(
-        style = "float: right; margin-top: -24px;",
+        style = "float: right;",
         checkboxGroupButtons(
           inputId = "map_toggle",
           label = "",
@@ -134,7 +136,7 @@ ui <- tagList(
       conditionalPanel(
         condition = "input.station == input.my_station & input.map_toggle != '🌎'",
         div(
-          style = "float: right; margin-top: -24px;",
+          style = "float: right;",
           checkboxGroupButtons(
             inputId = "limit_line",
             label = "",
@@ -142,7 +144,7 @@ ui <- tagList(
           )
         )
       ),
-    ),
+    )),
     conditionalPanel(
       condition = "input.map_toggle != '🌎'",
       div(style = "clear: both; margin-top: -12px;",
