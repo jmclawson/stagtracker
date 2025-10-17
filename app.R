@@ -114,7 +114,7 @@ ui <- tagList(
         )
       ),
       conditionalPanel(
-        condition = "input.map_toggle != '🌎'",
+        condition = "input.map_toggle == ''",
         div(
           style = "width: 40px !important; float: left; margin-top: 24px;",
           uiOutput("arrow_button")
@@ -130,9 +130,7 @@ ui <- tagList(
           inputId = "map_toggle",
           label = "",
           size = "xs",
-          # choices = "🌎"#,"\U0001F30E\uFE0E"
-          # choices = "&#x1F30E;&#xFE0E;"
-          choices = "&#x1F5FA;&#xFE0E;"
+          choices = "🌎"#,"\U0001F30E\uFE0E"
         )
       ),
       conditionalPanel(
