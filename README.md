@@ -14,7 +14,7 @@ In app_options.R, set the following values:
 
 ## Interface
 
-At the top of the screen, a table shows the incoming trains for one station and one direction. Underneath, a toggle sets the direction, and a picker sets the stations. The station set as `home_station` will also show a toggle at the bottom right, allowing focus on a single line.
+At the top of the screen, a table shows the incoming trains for one station and one direction. Underneath, a picker sets the station and a three-way toggle sets the direction. The station set as `home_station` will also show a toggle allowing focus on a single `commute` line. At the bottom right a map button replaces the train time table with a map of incoming train location.
 
 Every sixty seconds, the app requests updated data using the API provided. During set times on weekday mornings, the app will by default focus on the `commute` line. During set times in the evenings, the tracker will show arrival times for trains coming in either direction. 
 
@@ -24,22 +24,22 @@ Clicking on the table makes it run full screen.
 
 <dl>
 <dt>Southbound from Belmont</dt>
-<dd><img width="770" height="447" alt="Screenshot 2025-10-07 at 8 14 19 AM" src="https://github.com/user-attachments/assets/cbbfa29c-b612-4f4b-9389-09cfcceed1d0" /></dd>
+<dd><img width="1490" height="1041" alt="belmont_southbound" src="https://github.com/user-attachments/assets/d3f26019-aa16-483e-9f87-415af3adecf9" /></dd>
 
-<dt>Map at Belmont</dt>
-<dd><img width="770" height="447" alt="Screenshot 2025-10-07 at 8 14 19 AM" src="https://github.com/user-attachments/assets/cbbfa29c-b612-4f4b-9389-09cfcceed1d0" /></dd>
+<dt>Map at Belmont with popup</dt>
+<dd><img width="1142" height="813" alt="belmont_map_popup_16" src="https://github.com/user-attachments/assets/d22f23ce-22fe-4998-8d25-1c8122271f8c" /></dd>
 
-<dt>Clark and Lake on device</dt>
-<dd><img width="4032" height="3024" alt="clark_lake" src="https://github.com/user-attachments/assets/40df18af-2c8e-4024-9f6a-75bbbcac5a21" /></dd>
+<dt>Clark and Lake</dt>
+<dd><img width="1370" height="1005" alt="clark_and_lake_times" src="https://github.com/user-attachments/assets/527b1848-22ef-4fbe-b6fa-46b3a7e90b2a" /></dd>
 
-<dt>Clark and Lake map on device</dt>
-<dd><img width="4032" height="3024" alt="clark_lake" src="https://github.com/user-attachments/assets/40df18af-2c8e-4024-9f6a-75bbbcac5a21" /></dd>
+<dt>Map at Clark and Lake</dt>
+<dd><img width="1189" height="812" alt="clark_and_lake_map_city" src="https://github.com/user-attachments/assets/bde97aca-2614-4e6c-a31c-986d9e00c3bf" /></dd>
 
 <dt>Belmont commute</dt>
-<dd><img width="4032" height="3024" alt="belmont_commute" src="https://github.com/user-attachments/assets/9e785c23-4575-4ed9-8e4f-d23656f4cf5f" /></dd>
+<dd><img width="1649" height="1216" alt="belmont_commute_new" src="https://github.com/user-attachments/assets/e739388e-e10f-4251-81f5-8580357025bd" /></dd>
 
 <dt>Station picker with large nub for scrolling</dt>
-<dd><img width="3534" height="2601" alt="station_picker" src="https://github.com/user-attachments/assets/ffa4447a-1d41-4e81-bb72-44ac43034004" /></dd>
+<dd><img width="1246" height="896" alt="station_picker_new" src="https://github.com/user-attachments/assets/5aceccf2-1fee-4f7c-82a0-ccc2f17cd109" /></dd>
 
 </dl>
 
