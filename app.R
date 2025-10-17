@@ -130,11 +130,13 @@ ui <- tagList(
           inputId = "map_toggle",
           label = "",
           size = "xs",
-          choices = "🌎"#,"\U0001F30E\uFE0E"
+          # choices = "🌎"#,"\U0001F30E\uFE0E"
+          # choices = "&#x1F30E;&#xFE0E;"
+          choices = "&#x1F5FA;&#xFE0E;"
         )
       ),
       conditionalPanel(
-        condition = "input.station == input.my_station & input.map_toggle != '🌎'",
+        condition = "input.station == input.my_station & input.map_toggle == ''",
         div(
           style = "float: right;",
           checkboxGroupButtons(
@@ -146,11 +148,11 @@ ui <- tagList(
       ),
     )),
     conditionalPanel(
-      condition = "input.map_toggle != '🌎'",
+      condition = "input.map_toggle == ''",
       div(style = "clear: both; margin-top: -12px;",
         htmlOutput("timetable", width = "90%"))),
     conditionalPanel(
-      condition = "input.map_toggle == '🌎'",
+      condition = "input.map_toggle != ''",
       div(style = "float: center;",# margin-top: -12px",
           leafletOutput("mapit", width = "100%", height = "225px"))
     )
