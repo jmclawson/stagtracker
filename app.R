@@ -343,7 +343,6 @@ server <- function(input, output, session) {
         style_timetable_gt()
     }
   })
-  library(leaflet)
   
   trains_map <- reactive({train_times() |> 
       tidyr::drop_na(lon, lat) |> 
