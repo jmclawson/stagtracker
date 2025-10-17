@@ -205,7 +205,15 @@ server <- function(input, output, session) {
     updateCheckboxGroupButtons(
       session = session,
       inputId = "limit_line",
-      selected = NA
+      selected = ""
+    )
+  })
+  
+  observeEvent(input$map_toggle, {
+    updateCheckboxGroupButtons(
+      session = session,
+      inputId = "limit_line",
+      selected = ""
     )
   })
   
@@ -329,11 +337,11 @@ server <- function(input, output, session) {
   })
   
   output$timetable <- shiny::renderUI({
-    if(direction_order[arrow_state() + 1] == "↕") {
+    if(direction_order[arrow_state() + 1] == direction_order[3]) {
       train_times() |> 
         select(line, dest, est) |> 
         style_timetable_gt()
-    } else if(direction_order[arrow_state() + 1] == "↑"){
+    } else if(direction_order[arrow_state() + 1] == direction_order[2]){
       train_times_north() |> 
         select(line, dest, est) |> 
         style_timetable_gt()
