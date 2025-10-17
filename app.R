@@ -152,7 +152,7 @@ ui <- tagList(
     conditionalPanel(
       condition = "input.map_toggle == '🌎'",
       div(style = "float: center;",# margin-top: -12px",
-          leaflet::leafletOutput("mapit", width = "100%", height = "235px"))
+          leafletOutput("mapit", width = "100%", height = "225px"))
     )
   )
 )
@@ -371,8 +371,9 @@ server <- function(input, output, session) {
     coords[n]
   }
   
-  output$mapit <- leaflet::renderLeaflet(
-    leaflet() |> 
+  output$mapit <- renderLeaflet(
+    leaflet(options = leafletOptions(
+      attributionControl=FALSE)) |> 
       addTiles() |> 
       addPolylines(
         data = cta_lines,
