@@ -26,7 +26,13 @@ Clicking on the table makes it run full screen.
 <dt>Southbound from Belmont</dt>
 <dd><img width="770" height="447" alt="Screenshot 2025-10-07 at 8 14 19 AM" src="https://github.com/user-attachments/assets/cbbfa29c-b612-4f4b-9389-09cfcceed1d0" /></dd>
 
+<dt>Map at Belmont</dt>
+<dd><img width="770" height="447" alt="Screenshot 2025-10-07 at 8 14 19 AM" src="https://github.com/user-attachments/assets/cbbfa29c-b612-4f4b-9389-09cfcceed1d0" /></dd>
+
 <dt>Clark and Lake on device</dt>
+<dd><img width="4032" height="3024" alt="clark_lake" src="https://github.com/user-attachments/assets/40df18af-2c8e-4024-9f6a-75bbbcac5a21" /></dd>
+
+<dt>Clark and Lake map on device</dt>
 <dd><img width="4032" height="3024" alt="clark_lake" src="https://github.com/user-attachments/assets/40df18af-2c8e-4024-9f6a-75bbbcac5a21" /></dd>
 
 <dt>Belmont commute</dt>
