@@ -13,4 +13,5 @@ commute_label <- substr(commute, 1, 1)
 show_rows <- 5
 
 # Adjust the order to favor ▲
-direction_order <- c("▼", "▲")
+# direction_order <- c("▼", "▲")#, c("↓", "↑", "↕"
+direction_order <- c("↓", "↑", "↕")

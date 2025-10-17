@@ -9,6 +9,8 @@ library(lubridate)
 library(stringr)
 library(shinyWidgets)
 library(shinyfullscreen)
+library(leaflet)
+library(geojsonsf)
 
 source("app_options.R")
 
@@ -16,11 +18,40 @@ if (file.exists("my_key.R")) {
   source("my_key.R")
 }
 
+official_colors <- c(
+  Red = "#C60C30",
+  Brn = "#62361b",
+  P = "#522398",
+  Blue = "#00a1de",
+  G = "#009b3a",
+  Org = "#f9461c",
+  Pink = "#e27ea6",
+  Y = "#F9E300"
+)
+
+line_names <- c(
+  Red = "Red",
+  Brn = "Brown",
+  P = "Purple",
+  Blue = "Blue",
+  G = "Green",
+  Org = "Orange",
+  Pink = "Pink",
+  Y = "Yellow"
+)
+
 stations <- readr::read_csv("data/stations.csv") |> 
   {\(x) setNames(x$id, x$station)}()
 
 names(stations) <- names(stations) |> 
-  stringr::str_remove_all("Line[s]?")
+  stringr::str_remove_all("[ ]?Line[s]?") |> 
+  stringr::str_squish() |> 
+  stringr::str_replace_all(" [)]", ")") |> 
+  stringr::str_replace_all("Blue-([a-zA-Z])", "Blue - \\1")
+
+cta_lines <- geojsonsf::geojson_sf("data/CTA_-_L_Rail_Lines_20251016.geojson")
+
+cta_stations <- geojsonsf::geojson_sf("data/CTA_-_L_Rail_Stations_20251016.geojson")
 
 ui <- tagList(
   tags$head(tags$style("
@@ -49,60 +80,83 @@ ui <- tagList(
       color: black !important;
       text-shadow: 1px 1px 3px #FFFFFF;
     }
+    
+    .form-group {
+      margin-bottom: 0px;
+    }
                        ")),
   fixedPage(
-  title = "Stagtracker",
-  theme = bslib::bs_theme(
-    version = 5L,
-    bg = "black",
-    fg = "white",
-    preset = "flatly"
-  ),
-  fullscreen_all(click_id = "timetable", bg_color = "black"),
-  htmlOutput("timetable"),
-  div(
-    # style = "width: 470px !important;",
-    div(
-      style = "width: 80px !important; float: left;",
-      radioGroupButtons(
-        inputId = "arrow_choice",
-        choices = direction_order
-      )
+    title = "Stagtracker",
+    theme = bslib::bs_theme(
+      version = 5L,
+      bg = "black",
+      fg = "white",
+      preset = "flatly"
     ),
+    fullscreen_all(click_id = "timetable", bg_color = "black"),
     div(
-      style = "width: 300px !important; margin-top: -24px; float: left;",
-      pickerInput(
-        "station", "",
-        selected = home_station,
-        choices = stations,
-        options = pickerOptions(
+      # style = "width: 470px !important;",
+      div(
+        style = "width: 300px !important; margin-top: -24px; float: left;",
+        pickerInput(
+          "station", "",
+          selected = home_station,
+          choices = stations,
+          options = pickerOptions(
             liveSearch = FALSE
-            ),
-        choicesOpt = 
-          list(
-            class = "choicePicker"
-          )
-      )
-    ),
-    div(
-      style = "display: none;",
-      textInput("my_station", "", home_station)),
-    conditionalPanel(
-      condition = "input.station == input.my_station",
+          ),
+          choicesOpt =
+            list(
+              class = "choicePicker"
+            )
+        )
+      ),
+      conditionalPanel(
+        condition = "input.map_toggle != '🌎'",
+        div(
+          style = "width: 40px !important; float: left;",
+          uiOutput("arrow_button")
+        )
+      ),
+      div(
+        style = "display: none;",
+        textInput("my_station", "", home_station)
+      ),
       div(
         style = "float: right; margin-top: -24px;",
         checkboxGroupButtons(
-          inputId = "limit_line",
-          label = "", 
-          choices = c(commute_label)
+          inputId = "map_toggle",
+          label = "",
+          size = "xs",
+          choices = "🌎"#,"\U0001F30E\uFE0E"
         )
+      ),
+      conditionalPanel(
+        condition = "input.station == input.my_station & input.map_toggle != '🌎'",
+        div(
+          style = "float: right; margin-top: -24px;",
+          checkboxGroupButtons(
+            inputId = "limit_line",
+            label = "",
+            choices = c(commute_label)
+          )
         )
+      ),
     ),
+    conditionalPanel(
+      condition = "input.map_toggle != '🌎'",
+      div(style = "clear: both; margin-top: -12px;",
+        htmlOutput("timetable", width = "90%"))),
+    conditionalPanel(
+      condition = "input.map_toggle == '🌎'",
+      div(style = "float: center;",# margin-top: -12px",
+          leaflet::leafletOutput("mapit", width = "100%", height = "235px"))
+    )
   )
-)
 )
 
 server <- function(input, output, session) {
+  
   train_times <- reactive({
     invalidateLater(1 * 60 * 1000, session)
     
@@ -121,20 +175,11 @@ server <- function(input, output, session) {
         nms   <- xml_name(kids)
         as_tibble(setNames(as.list(replace(vals, vals == "", NA_character_)), nms))
       }) |> 
-      select(rn, line = rt, dest = destNm, arriving = arrT, direction = trDr) |> 
+      rename(line = rt, dest = destNm, arriving = arrT, direction = trDr) |> 
       mutate(
         arriving = as_datetime(arriving, tz = "US/Central"),
-        est = interval(now(), arriving) / dminutes(1),
-        estimated = case_when(
-          est == first(est) ~ floor(est),
-          .default = round(est)
-        ) |> paste("minutes") |> 
-          str_replace_all("^0 minutes", "due") |> 
-          str_replace_all("-1 minutes", "due") |> 
-          str_replace_all("^-.*", "overdue") |> 
-          str_replace_all("^1 minutes", "1 minute")) |> 
-      arrange(est) |> 
-      select(line, dest, estimated, direction)
+        est = interval(now(), arriving) / dminutes(1)) |> 
+      arrange(est)
     
     if (commute_label %in% input$limit_line) {
      the_df <- the_df |> 
@@ -174,18 +219,7 @@ server <- function(input, output, session) {
         selected = commute_label
       )
     } else if (input$station == home_station && hour(now(tz = "US/Central")) %in% 19:23) {
-      # evenings, show all bidirectional
-      updateCheckboxGroupButtons(
-        session = session,
-        inputId = "limit_line",
-        selected = NULL
-      )
-      updateRadioGroupButtons(
-        session = session,
-        inputId = "arrow_choice",
-        selected = character(0))
-    } else {
-      # generally, show all south
+      # evenings, reset the limit
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_line",
@@ -205,6 +239,17 @@ server <- function(input, output, session) {
     }
     
     df_gt <- .data |> 
+      arrange(est) |> 
+      mutate(
+        estimated = case_when(
+          est == first(est) ~ floor(est),
+          .default = round(est)
+        ) |> paste("minutes") |> 
+          str_replace_all("^0 minutes", "due") |> 
+          str_replace_all("-1 minutes", "due") |> 
+          str_replace_all("^-.*", "overdue") |> 
+          str_replace_all("^1 minutes", "1 minute")) |> 
+      select(-est) |> 
       gt() |> 
       tab_style(
         locations = cells_body(rows = line == "Red"), 
@@ -273,19 +318,76 @@ server <- function(input, output, session) {
         locations = cells_body(columns = estimated))
   }
   
+  arrow_state <- reactiveVal(0) 
+  
+  output$arrow_button <- renderUI({
+    actionButton("arrow_btn", direction_order[arrow_state() + 1])
+  })
+  
+  observeEvent(input$arrow_btn, {
+    arrow_state((arrow_state() + 1) %% 3)
+  })
+  
   output$timetable <- shiny::renderUI({
-    if(length(input$arrow_choice) > 0 && input$arrow_choice == "▼") {
-      train_times_south() |> 
+    if(direction_order[arrow_state() + 1] == "↕") {
+      train_times() |> 
+        select(line, dest, est) |> 
         style_timetable_gt()
-    } else if(length(input$arrow_choice) > 0 && input$arrow_choice == "▲"){
+    } else if(direction_order[arrow_state() + 1] == "↑"){
       train_times_north() |> 
+        select(line, dest, est) |> 
         style_timetable_gt()
     } else {
-      train_times() |> 
-        select(-direction) |> 
+      train_times_south() |> 
+        select(line, dest, est) |> 
         style_timetable_gt()
     }
   })
+  library(leaflet)
+  
+  trains_map <- reactive({train_times() |> 
+      tidyr::drop_na(lon, lat) |> 
+      sf::st_as_sf(
+        coords = c("lon", "lat"), crs = 4326) |> 
+      rowwise() |> 
+      mutate(
+        hex_color = unname(official_colors[line])
+      ) |>
+      ungroup()})
+  
+  get_sf_n <- function(id, n) {
+    coords <- cta_stations$geometry[cta_stations$station_id==id] |> 
+      sf::st_coordinates()
+    
+    coords[n]
+  }
+  
+  output$mapit <- leaflet::renderLeaflet(
+    leaflet() |> 
+      addTiles() |> 
+      addPolylines(
+        data = cta_lines,
+        color = "#884", opacity = 1, weight = 4) |> 
+      addCircles(
+        get_sf_n(as.numeric(input$station)-40000, 1),
+        get_sf_n(as.numeric(input$station)-40000, 2),
+        color = "black",
+        fill = "white",
+        fillOpacity = 0.9,
+        radius = 40
+      ) |> 
+      addCircleMarkers(
+        data = trains_map(),
+        opacity = 0.8,
+        label = ~ paste(line_names[line], rn),
+        popup = ~ paste(line_names[line], "Line", str_replace(stpDe, "Service", "service")),
+        color = ~ hex_color) |>
+      setView(
+        get_sf_n(as.numeric(input$station)-40000, 1),
+        get_sf_n(as.numeric(input$station)-40000, 2),
+        zoom = 13) |> 
+      addProviderTiles(providers$Stadia.StamenToner)
+  )
 }
 
 shinyApp(ui, server)
