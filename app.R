@@ -389,8 +389,8 @@ server <- function(input, output, session) {
       addCircleMarkers(
         data = trains_map(),
         opacity = 0.8,
-        label = ~ paste(line_names[line], rn),
-        popup = ~ paste(line_names[line], "Line", str_replace(stpDe, "Service", "service")),
+        # label = ~ paste(line_names[line], rn),
+        popup = ~ paste(line_names[line], "Line", rn, str_replace(stpDe, "Service", "service")),
         color = ~ hex_color) |>
       setView(
         get_sf_n(as.numeric(input$station)-40000, 1),
