@@ -238,9 +238,27 @@ server <- function(input, output, session) {
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_line",
-        selected = NULL
+        selected = ""
       )
     }
+  })
+  
+  observe({
+    invalidateLater(1 * 30 * 60 * 1000, session)
+    if (current_hour() %in% 6:11) {updateCheckboxGroupButtons(
+      session, 
+      "map_toggle", 
+      selected = "")
+    } else if (current_minutes() < 30) {
+      updateCheckboxGroupButtons(
+        session, 
+        "map_toggle", 
+        selected = "🌎")
+      } else {
+        updateCheckboxGroupButtons(
+          session, 
+          "map_toggle", 
+          selected = "")}
   })
   
   style_timetable_gt <- function(.data){
@@ -349,7 +367,7 @@ server <- function(input, output, session) {
   
   current_minutes <- reactive({
     invalidateLater(1 * 60 * 1000, session)
-    now() |> minute() %% 10
+    now() |> minute()
   })
   
   current_hour <- reactive({
@@ -358,7 +376,7 @@ server <- function(input, output, session) {
   })
 
   output$dynamic_css <- renderUI({
-    if (current_minutes() < 5) {
+    if ((current_minutes() %% 10 < 5)) {
       tags$head(
         tags$style(HTML(paste0(
           "#bottom_bar {position: absolute; bottom: ", sample(5:7, size = 1), "px; top: unset; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
