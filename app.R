@@ -377,13 +377,16 @@ server <- function(input, output, session) {
 
   output$dynamic_css <- renderUI({
     if ((current_minutes() %% 10 < 5)) {
+      # buttons at bottom
       tags$head(
         tags$style(HTML(paste0(
           "#bottom_bar {position: absolute; bottom: ", sample(5:7, size = 1), "px; top: unset; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
-          #tymetable {margin-top: -12px;}"
+          #mapit {margin-top: 0px;}
+          #tymetable {margin-top: -12px; position: absolute; bottom: unset;}"
         )))
       )
     } else {
+      # buttons at top
       tags$head(
         tags$style(HTML(paste0(
           "#bottom_bar {position: absolute; bottom: unset; top: ", sample(0:3, size = 1), "px; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: -24px;}
