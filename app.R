@@ -84,6 +84,11 @@ ui <- tagList(
     .form-group {
       margin-bottom: 0px;
     }
+    
+    .leaflet-control-zoom a {
+      background-color: #445;
+      color: #aaa
+      }
                        ")),
   fixedPage(
     title = "Stagtracker",
@@ -93,65 +98,65 @@ ui <- tagList(
       fg = "white",
       preset = "flatly"
     ),
+    uiOutput("dynamic_css"),
     fullscreen_all(click_id = "timetable", bg_color = "black"),
+    # htmlOutput("bottom_bar"),
     div(
-      style = "position: absolute; bottom: 5px; width: 100vw; padding-right: 24px;",
-    div(
-      # style = "width: 470px !important;",
+      id = "bottom_bar",
+      # style = textOutput("bottom_bar_css"),#"position: absolute; bottom: 5px; width: 100vw; padding-right: 24px;",
       div(
-        style = "width: 300px !important; float: left;",
-        pickerInput(
-          "station", "",
-          selected = home_station,
-          choices = stations,
-          options = pickerOptions(
-            liveSearch = FALSE
-          ),
-          choicesOpt =
-            list(
-              class = "choicePicker"
-            )
-        )
-      ),
-      conditionalPanel(
-        condition = "input.map_toggle == ''",
+        div(
+          style = "width: 300px !important; float: left;",
+          pickerInput(
+            "station", "",
+            selected = home_station,
+            choices = stations,
+            options = pickerOptions(
+              liveSearch = FALSE
+            ),
+            choicesOpt =
+              list(
+                class = "choicePicker"
+              )
+          )
+        ),
         div(
           style = "width: 40px !important; float: left; margin-top: 24px;",
           uiOutput("arrow_button")
-        )
-      ),
-      div(
-        style = "display: none;",
-        textInput("my_station", "", home_station)
-      ),
-      div(
-        style = "float: right;",
-        checkboxGroupButtons(
-          inputId = "map_toggle",
-          label = "",
-          size = "xs",
-          choices = "🌎"#,"\U0001F30E\uFE0E"
-        )
-      ),
-      conditionalPanel(
-        condition = "input.station == input.my_station & input.map_toggle == ''",
+        ),
+        div(
+          style = "display: none;",
+          textInput("my_station", "", home_station)
+        ),
         div(
           style = "float: right;",
           checkboxGroupButtons(
-            inputId = "limit_line",
+            inputId = "map_toggle",
             label = "",
-            choices = c(commute_label)
+            size = "xs",
+            choices = "🌎"
           )
-        )
-      ),
-    )),
+        ),
+        conditionalPanel(
+          condition = "input.station == input.my_station & input.map_toggle == ''",
+          div(
+            style = "float: right;",
+            checkboxGroupButtons(
+              inputId = "limit_line",
+              label = "",
+              choices = c(commute_label)
+            )
+          )
+        ),
+      )
+    ),
     conditionalPanel(
       condition = "input.map_toggle == ''",
-      div(style = "clear: both; margin-top: -12px;",
+      div(id = "tymetable", style = "clear: both;",
         htmlOutput("timetable", width = "90%"))),
     conditionalPanel(
       condition = "input.map_toggle != ''",
-      div(style = "float: center;",# margin-top: -12px",
+      div(style = "float: center;",
           leafletOutput("mapit", width = "100%", height = "225px"))
     )
   )
@@ -221,14 +226,14 @@ server <- function(input, output, session) {
   
   observe({
     invalidateLater(1 * 30 * 60 * 1000, session) # hr, min, sec, ms
-    if (input$station == home_station && hour(now(tz = "US/Central")) %in% 6:11 && wday(now()) %in% 2:6) {
+    if (input$station == home_station && current_hour() %in% 6:11 && wday(now()) %in% 2:6) {
       # weekday morns, limit to Red
       updateCheckboxGroupButtons(
         session = session,
         inputId = "limit_line",
         selected = commute_label
       )
-    } else if (input$station == home_station && hour(now(tz = "US/Central")) %in% 19:23) {
+    } else if (input$station == home_station && current_hour() %in% 19:23) {
       # evenings, reset the limit
       updateCheckboxGroupButtons(
         session = session,
@@ -338,7 +343,40 @@ server <- function(input, output, session) {
     arrow_state((arrow_state() + 1) %% 3)
   })
   
-  output$timetable <- shiny::renderUI({
+  observeEvent(input$map_toggle, {
+    arrow_state(2 %% 3)
+  })
+  
+  current_minutes <- reactive({
+    invalidateLater(1 * 60 * 1000, session)
+    now() |> minute() %% 10
+  })
+  
+  current_hour <- reactive({
+    invalidateLater(30 * 60 * 1000, session)
+    now() |> hour()
+  })
+
+  output$dynamic_css <- renderUI({
+    if (current_minutes() < 5) {
+      tags$head(
+        tags$style(HTML(paste0(
+          "#bottom_bar {position: absolute; bottom: ", sample(5:7, size = 1), "px; top: unset; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
+          #tymetable {margin-top: -12px;}"
+        )))
+      )
+    } else {
+      tags$head(
+        tags$style(HTML(paste0(
+          "#bottom_bar {position: absolute; bottom: unset; top: ", sample(0:3, size = 1), "px; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: -24px;}
+          #mapit {margin-top: 41px;}
+          #tymetable {position: absolute; bottom: 5px; top: unset;}"
+        )))
+      )
+    }
+  })
+  
+  output$timetable <- renderUI({
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
       train_times() |> 
         select(line, dest, est) |> 
@@ -354,7 +392,16 @@ server <- function(input, output, session) {
     }
   })
   
-  trains_map <- reactive({train_times() |> 
+  trains_map <- reactive({
+    if(direction_order[arrow_state() + 1] == direction_order[3]) {
+      starting_df <- train_times()
+    } else if(direction_order[arrow_state() + 1] == direction_order[2]){
+      starting_df <- train_times_north()
+    } else {
+      starting_df <- train_times_south()
+    }
+    
+    starting_df |> 
       tidyr::drop_na(lon, lat) |> 
       sf::st_as_sf(
         coords = c("lon", "lat"), crs = 4326) |> 
@@ -364,11 +411,17 @@ server <- function(input, output, session) {
       ) |>
       ungroup()})
   
-  get_sf_n <- function(id, n) {
-    coords <- cta_stations$geometry[cta_stations$station_id==id] |> 
-      sf::st_coordinates()
-    
-    coords[n]
+  get_sf_n <- function(id = NULL, n) {
+    if (is.null(id)) {
+      coords <- cta_stations$geometry |> 
+        sf::st_coordinates()
+      result <- coords[,n]
+    } else {
+      coords <- cta_stations$geometry[cta_stations$station_id==id] |> 
+        sf::st_coordinates()
+      result <- coords[n]
+    }
+    result
   }
   
   output$mapit <- renderLeaflet(
@@ -377,26 +430,35 @@ server <- function(input, output, session) {
       addTiles() |> 
       addPolylines(
         data = cta_lines,
-        color = "#884", opacity = 1, weight = 4) |> 
-      addCircles(
-        get_sf_n(as.numeric(input$station)-40000, 1),
-        get_sf_n(as.numeric(input$station)-40000, 2),
-        color = "black",
-        fill = "white",
-        fillOpacity = 0.9,
-        radius = 40
+        color = "#992", 
+        opacity = 0.7, 
+        weight = 3.5) |> 
+      addRectangles(
+        lng1 = get_sf_n(n = 1),
+        lat1 = get_sf_n(n = 2),
+        lng2 = get_sf_n(n = 1),
+        lat2 = get_sf_n(n = 2),
+        weight = 7,
+        color = "#bb3",
+        opacity = 0.95,
+        popup = paste("<b>", cta_stations$longname, "</b><br>", cta_stations$lines),
       ) |> 
       addCircleMarkers(
         data = trains_map(),
-        opacity = 0.8,
+        opacity = 0.9,
         # label = ~ paste(line_names[line], rn),
         popup = ~ paste(line_names[line], "Line", rn, str_replace(stpDe, "Service", "service")),
-        color = ~ hex_color) |>
+        color = "white",
+        weight = 1,
+        fillColor = ~ hex_color,
+        fillOpacity = 0.7) |>
       setView(
-        get_sf_n(as.numeric(input$station)-40000, 1),
-        get_sf_n(as.numeric(input$station)-40000, 2),
-        zoom = 13) |> 
-      addProviderTiles(providers$Stadia.StamenToner)
+        get_sf_n(as.numeric(input$station)-40000, 1) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        get_sf_n(as.numeric(input$station)-40000, 2) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        zoom = sample(12:14, size = 1)
+        ) |> 
+      # addProviderTiles(providers$Stadia.StamenToner) |> 
+      addProviderTiles(providers$Stadia.AlidadeSmoothDark)
   )
 }
 
