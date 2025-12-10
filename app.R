@@ -445,6 +445,24 @@ server <- function(input, output, session) {
     result
   }
   
+  convert_heading <- function(x){
+    x <- as.numeric(x) %% 360
+    direction <- round(x / 45)
+    
+    cta_compass <- c(
+      "north", 
+      "northeast",
+      "east",
+      "southeast",
+      "south",
+      "southwest",
+      "west",
+      "northwest"
+    )
+    
+    cta_compass[(direction + 1) %% 8]
+  }
+  
   output$mapit <- renderLeaflet(
     leaflet(options = leafletOptions(
       attributionControl=FALSE)) |> 
@@ -454,6 +472,22 @@ server <- function(input, output, session) {
         color = "#992", 
         opacity = 0.7, 
         weight = 3.5) |> 
+      addCircleMarkers(
+        data = trains_map(),
+        opacity = 0.9,
+        popup = ~ paste0(
+          line_names[line], " Line ", rn, " ", 
+          # convert_heading(heading), "-bound ", # seems like bad heading data
+          str_replace(stpDe, "Service", "service")),
+        color = "white",
+        weight = 1,
+        fillColor = ~ hex_color,
+        fillOpacity = 0.7) |>
+      setView(
+        get_sf_n(as.numeric(input$station)-40000, 1) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        get_sf_n(as.numeric(input$station)-40000, 2) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        zoom = sample(12:14, size = 1)
+        ) |> 
       addRectangles(
         lng1 = get_sf_n(n = 1),
         lat1 = get_sf_n(n = 2),
@@ -464,19 +498,20 @@ server <- function(input, output, session) {
         opacity = 0.95,
         popup = paste("<b>", cta_stations$longname, "</b><br>", cta_stations$lines),
       ) |> 
-      addCircleMarkers(
-        data = trains_map(),
-        opacity = 0.9,
-        # label = ~ paste(line_names[line], rn),
-        popup = ~ paste(line_names[line], "Line", rn, str_replace(stpDe, "Service", "service")),
-        color = "white",
-        weight = 1,
-        fillColor = ~ hex_color,
-        fillOpacity = 0.7) |>
-      setView(
-        get_sf_n(as.numeric(input$station)-40000, 1) + sample(runif(6, -0.00006, 0.00006), size = 1),
-        get_sf_n(as.numeric(input$station)-40000, 2) + sample(runif(6, -0.00006, 0.00006), size = 1),
-        zoom = sample(12:14, size = 1)
+      addMarkers(
+        data = train_times() |> mutate(across(c(lat, lon), as.numeric)),
+        lat = ~ lat,
+        lng = ~ lon,
+        icon = icons(
+          iconUrl = "www/tree.png",
+          iconWidth = ifelse(train_times()$rn == 1225,
+                             20,
+                             1), 
+          iconHeight = ifelse(train_times()$rn == 1225,
+                              20,
+                              1)
+        ),
+        popup = ~ paste(line_names[line], "Line 🎄", rn, str_replace(stpDe, "Service", "service"))
         ) |> 
       # addProviderTiles(providers$Stadia.StamenToner) |> 
       addProviderTiles(providers$Stadia.AlidadeSmoothDark)
