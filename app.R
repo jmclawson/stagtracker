@@ -18,6 +18,8 @@ if (file.exists("my_key.R")) {
   source("my_key.R")
 }
 
+christmas_train <- c(1225, 410, 820, 804, 821, 811, 404, 516, 906, 813, 408)
+
 official_colors <- c(
   Red = "#C60C30",
   Brn = "#62361b",
@@ -399,18 +401,21 @@ server <- function(input, output, session) {
   
   output$timetable <- renderUI({
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
-      train_times() |> 
-        select(line, dest, est) |> 
-        style_timetable_gt()
+      input <- train_times()
     } else if(direction_order[arrow_state() + 1] == direction_order[2]){
-      train_times_north() |> 
-        select(line, dest, est) |> 
-        style_timetable_gt()
+      input <- train_times_north()
     } else {
-      train_times_south() |> 
-        select(line, dest, est) |> 
-        style_timetable_gt()
+      input <- train_times_south()
     }
+    input |> 
+      mutate(dest = ifelse(rn %in% christmas_train, 
+                           paste(dest, 
+                                 # html("&#x1f384; &#x1f384;&#xFE0E; &#10052; &#10052;&#xFE0E;"), 
+                                 html("<img src='tree.png' width='35px' height='35px'>")
+                                 ), dest)) |> 
+      select(line, dest, est) |> 
+      style_timetable_gt() |> 
+      gt::fmt_markdown(columns = "dest")
   })
   
   trains_map <- reactive({
@@ -475,10 +480,11 @@ server <- function(input, output, session) {
       addCircleMarkers(
         data = trains_map(),
         opacity = 0.9,
-        popup = ~ paste0(
-          line_names[line], " Line ", rn, " ", 
-          # convert_heading(heading), "-bound ", # seems like bad heading data
-          str_replace(stpDe, "Service", "service")),
+        popup = ~ paste(
+          line_names[line], "Line", rn,
+          "service",
+          convert_heading(heading), # can't trust heading data
+          "toward", dest),
         color = "white",
         weight = 1,
         fillColor = ~ hex_color,
@@ -504,14 +510,14 @@ server <- function(input, output, session) {
         lng = ~ lon,
         icon = icons(
           iconUrl = "www/tree.png",
-          iconWidth = ifelse(train_times()$rn == 1225,
+          iconWidth = ifelse(train_times()$rn %in% christmas_train,
                              20,
                              1), 
-          iconHeight = ifelse(train_times()$rn == 1225,
+          iconHeight = ifelse(train_times()$rn %in% christmas_train,
                               20,
                               1)
         ),
-        popup = ~ paste(line_names[line], "Line 🎄", rn, str_replace(stpDe, "Service", "service"))
+        popup = ~ paste(html("<center><img src='tree.png' width='50px' height='50px'></center><br>"), line_names[line], "Line", html("holiday"), rn, str_replace(stpDe, "Service", "service"))
         ) |> 
       # addProviderTiles(providers$Stadia.StamenToner) |> 
       addProviderTiles(providers$Stadia.AlidadeSmoothDark)
