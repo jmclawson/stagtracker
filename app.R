@@ -517,7 +517,7 @@ server <- function(input, output, session) {
                               20,
                               1)
         ),
-        popup = ~ paste(html("<center><img src='tree.png' width='50px' height='50px'></center><br>"), line_names[line], "Line", html("holiday"), rn, str_replace(stpDe, "Service", "service"))
+        popup = ~ paste(html("<center><img src='tree.png' width='50px' height='50px'></center><br>"), line_names[line], "Line 1225 Holiday service toward", dest)
         ) |> 
       # addProviderTiles(providers$Stadia.StamenToner) |> 
       addProviderTiles(providers$Stadia.AlidadeSmoothDark)
