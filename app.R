@@ -18,7 +18,7 @@ if (file.exists("my_key.R")) {
   source("my_key.R")
 }
 
-christmas_train <- c(1225, 410, 820, 804, 821, 811, 404, 516, 906, 813, 408)
+christmas_train <- 1225# testing: c(1225, 410, 820, 804, 821, 811, 404, 516, 906, 813, 408)
 
 official_colors <- c(
   Red = "#C60C30",
@@ -411,7 +411,7 @@ server <- function(input, output, session) {
       mutate(dest = ifelse(rn %in% christmas_train, 
                            paste(dest, 
                                  # html("&#x1f384; &#x1f384;&#xFE0E; &#10052; &#10052;&#xFE0E;"), 
-                                 html("<img src='tree.png' width='35px' height='35px'>")
+                                 html("<img src='tree.png' width='34px' height='34px'>")
                                  ), dest)) |> 
       select(line, dest, est) |> 
       style_timetable_gt() |> 
@@ -483,7 +483,7 @@ server <- function(input, output, session) {
         popup = ~ paste(
           line_names[line], "Line", rn,
           "service",
-          convert_heading(heading), # can't trust heading data
+          # convert_heading(heading), # can't trust heading data
           "toward", dest),
         color = "white",
         weight = 1,
