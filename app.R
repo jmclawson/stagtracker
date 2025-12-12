@@ -11,6 +11,7 @@ library(shinyWidgets)
 library(shinyfullscreen)
 library(leaflet)
 library(geojsonsf)
+library(sf)
 
 source("app_options.R")
 
