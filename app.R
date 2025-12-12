@@ -51,9 +51,28 @@ names(stations) <- names(stations) |>
   stringr::str_replace_all(" [)]", ")") |> 
   stringr::str_replace_all("Blue-([a-zA-Z])", "Blue - \\1")
 
+stations_df <- data.frame(
+  station = names(stations),
+  id4 = unname(stations),
+  id = as.character(as.numeric(unname(stations)) - 40000)
+)
+
 cta_lines <- geojsonsf::geojson_sf("data/CTA_-_L_Rail_Lines_20251016.geojson")
 
 cta_stations <- geojsonsf::geojson_sf("data/CTA_-_L_Rail_Stations_20251016.geojson")
+
+cta_stations_df <- cta_stations |> 
+  left_join(stations_df,
+            by = join_by(station_id == id)) |> 
+  mutate(
+    clean_label = station |> 
+      stringr::str_remove_all(" [(].*[)]$")) #|> 
+  # mutate(
+  #   label_dir = case_when(
+  #     clean_label == "Roosevelt" ~ "left",
+  #     str_detect(clean_label, "[/]Wabash") ~ "right",
+  #     .default = "center"
+  #   ))
 
 ui <- tagList(
   tags$head(tags$style("
@@ -477,6 +496,25 @@ server <- function(input, output, session) {
         color = "#992", 
         opacity = 0.7, 
         weight = 3.5) |> 
+      addRectangles(
+        # data = cta_stations_df,
+        lng1 = get_sf_n(n = 1),
+        lat1 = get_sf_n(n = 2),
+        lng2 = get_sf_n(n = 1),
+        lat2 = get_sf_n(n = 2),
+        weight = 7,
+        color = "#bb3",
+        opacity = 0.75,
+        popup = paste("<b>", cta_stations_df$clean_label, "</b><br>", cta_stations_df$lines),
+      ) |>
+      addLabelOnlyMarkers(
+        data = cta_stations_df[cta_stations_df$id4 == input$station,],
+        label = ~ clean_label,
+        labelOptions = leaflet::labelOptions(
+          noHide = TRUE, textOnly = TRUE,
+          direction = "center", style = list(color = "#ffffff")
+        )
+      ) |> 
       addCircleMarkers(
         data = trains_map(),
         opacity = 0.9,
@@ -488,22 +526,15 @@ server <- function(input, output, session) {
         color = "white",
         weight = 1,
         fillColor = ~ hex_color,
-        fillOpacity = 0.7) |>
-      setView(
-        get_sf_n(as.numeric(input$station)-40000, 1) + sample(runif(6, -0.00006, 0.00006), size = 1),
-        get_sf_n(as.numeric(input$station)-40000, 2) + sample(runif(6, -0.00006, 0.00006), size = 1),
-        zoom = sample(12:14, size = 1)
-        ) |> 
-      addRectangles(
-        lng1 = get_sf_n(n = 1),
-        lat1 = get_sf_n(n = 2),
-        lng2 = get_sf_n(n = 1),
-        lat2 = get_sf_n(n = 2),
-        weight = 7,
-        color = "#bb3",
-        opacity = 0.95,
-        popup = paste("<b>", cta_stations$longname, "</b><br>", cta_stations$lines),
-      ) |> 
+        fillOpacity = 0.7) |> 
+      # addLabelOnlyMarkers(
+      #   data = cta_stations,
+      #   lng = get_sf_n(n = 1, id = as.numeric(input$station) - 40000),
+      #   lat = get_sf_n(n = 2, id = as.numeric(input$station) - 40000),
+      #   label = cta_stations |> 
+      #     filter(station_id == as.numeric(input$station) - 40000) |> 
+      #     pull(longname) |> pluck(1)
+      # ) |> 
       addMarkers(
         data = train_times() |> mutate(across(c(lat, lon), as.numeric)),
         lat = ~ lat,
@@ -519,8 +550,14 @@ server <- function(input, output, session) {
         ),
         popup = ~ paste(html("<center><img src='tree.png' width='50px' height='50px'></center><br>"), line_names[line], "Line 1225 Holiday service toward", dest)
         ) |> 
+      setView(
+        get_sf_n(as.numeric(input$station)-40000, 1) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        get_sf_n(as.numeric(input$station)-40000, 2) + sample(runif(6, -0.00006, 0.00006), size = 1),
+        zoom = sample(12:14, size = 1)
+      ) |> 
       # addProviderTiles(providers$Stadia.StamenToner) |> 
-      addProviderTiles(providers$Stadia.AlidadeSmoothDark)
+      # addProviderTiles(providers$Stadia.AlidadeSmoothDark) |> 
+      addProviderTiles(providers$CartoDB.DarkMatterNoLabels)
   )
 }
 
