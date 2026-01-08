@@ -173,7 +173,7 @@ ui <- tagList(
           )
         ),
         conditionalPanel(
-          condition = "input.station == input.my_station & input.map_toggle == ''",
+          condition = "input.map_toggle == ''",# & input.station == input.my_station",
           div(
             style = "float: right;",
             # checkboxGroupButtons(
@@ -232,10 +232,10 @@ server <- function(input, output, session) {
         est = interval(now(), arriving) / dminutes(1)) |> 
       arrange(est)
     
-    if (commute_label %in% input$commute_view) {
-     the_df <- the_df |> 
-       filter(line == commute)
-    }
+    # if (commute_label %in% input$commute_view) {
+    #  the_df <- the_df |> 
+    #    filter(line == commute)
+    # }
     
     the_df
   })
@@ -306,7 +306,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     
-    if (commute_label %in% input$commute_view) {
+    if (FALSE && commute_label %in% input$commute_view) {
       .data <- .data |> 
         filter(row_number() <= show_rows * .6)
     } else {
@@ -518,7 +518,7 @@ server <- function(input, output, session) {
                axis_converter())
       
     comm_plot <- commuting_data |> 
-      ggplot(aes(adjust_est, dest)) + 
+      ggplot(aes(adjust_est, paste0(direction, "_", dest))) + 
       geom_point(
         aes(fill = line), 
         color = "black",
