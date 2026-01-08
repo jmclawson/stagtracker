@@ -111,7 +111,13 @@ ui <- tagList(
     .leaflet-control-zoom a {
       background-color: #445;
       color: #aaa
-      }
+    }
+      
+    .comyuter img {
+      width: 100% !important;
+    }
+                       
+                       
                        ")),
   fixedPage(
     title = "Stagtracker",
@@ -169,15 +175,10 @@ ui <- tagList(
             #   label = "",
             #   choices = c(commute_label)
             # ),
-            # radioGroupButtons(
-            #   inputId = "limit_line",
-            #   label = "",
-            #   choices = c(commute_label, "i")# platypus adding commute viewer
-            # )
             checkboxGroupButtons(
               inputId = "limit_line",
               label = "",
-              choices = c("i")# platypus adding commute viewer
+              choices = c("&#x2691;" = "i")
             )
           )
         ),
@@ -190,7 +191,7 @@ ui <- tagList(
     conditionalPanel(
       condition = "input.map_toggle == '' && input.limit_line == 'i'",
       div(id = "comyuter", style = "clear: both;",
-          plotOutput("commuter", width = "100%", height = "225px"))),# platypus adding commute viewer
+          plotOutput("commuter", width = "100%", height = "225px"))),# 
     conditionalPanel(
       condition = "input.map_toggle != ''",
       div(style = "float: center;",
@@ -488,7 +489,7 @@ server <- function(input, output, session) {
     out 
   }
   
-  output$commuter <- renderPlot({
+  output$commuter <- renderPlot(height = 170, width = 300, {
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
       the_direction <- "all"
       input_df <- train_times()
@@ -500,7 +501,7 @@ server <- function(input, output, session) {
       input_df <- train_times_south()
     }
     
-    saveRDS(input_df, "exported_commuter.Rds")
+    # saveRDS(input_df, "exported_commuter.Rds")
     
     commuting_data <- 
       input_df |>
@@ -558,7 +559,7 @@ server <- function(input, output, session) {
     
     comm_plot + 
       geom_point(
-        data = filter(commuting_data, est < 7.5), 
+        data = filter(commuting_data, est < 8.5), 
         aes(
           fill = line,
           shape = est <= 3
@@ -566,7 +567,7 @@ server <- function(input, output, session) {
         color = "black",
         size = 20) + 
       geom_text(
-        data = filter(commuting_data, est < 7.5), 
+        data = filter(commuting_data, est < 8.5), 
         aes(label = round(est)), 
         color = "white", 
         size = 13) + 
