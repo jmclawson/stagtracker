@@ -513,6 +513,7 @@ server <- function(input, output, session) {
     commuting_data <- 
       input_df |>
       filter(abs(est) <= 20) |> 
+      arrange(desc(est)) |> 
       mutate(adjust_est = ifelse(direction == 5, est, -1 * est) |> 
                axis_converter())
       
