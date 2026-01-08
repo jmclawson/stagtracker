@@ -511,8 +511,10 @@ server <- function(input, output, session) {
     comm_plot <- commuting_data |> 
       ggplot(aes(adjust_est, dest)) + 
       geom_point(
-        aes(color = line), 
-        size = 8)
+        aes(fill = line), 
+        color = "black",
+        shape = 21,
+        size = 7)
     
     if (the_direction != "north") {
       comm_plot <- comm_plot +
@@ -543,23 +545,45 @@ server <- function(input, output, session) {
           linetype = "dotted")
     }
     
+    if (the_direction == "south") {
+      comm_plot <- comm_plot +
+        scale_x_continuous(limits = c(-0.01, 1))
+    } else if (the_direction == "north") {
+      comm_plot <- comm_plot +
+        scale_x_continuous(limits = c(-1, 0.01))
+    } else {
+      comm_plot <- comm_plot +
+        scale_x_continuous(limits = c(-1, 1))
+    }
+    
     comm_plot + 
       geom_point(
-        data = filter(commuting_data, est < 6), 
-        aes(color = line), 
+        data = filter(commuting_data, est < 7.5), 
+        aes(
+          fill = line,
+          shape = est <= 3
+          ), 
+        color = "black",
         size = 20) + 
       geom_text(
-        data = filter(commuting_data, est < 6), 
+        data = filter(commuting_data, est < 7.5), 
         aes(label = round(est)), 
         color = "white", 
-        size = 10) + 
-      scale_color_manual(values = official_colors) + 
+        size = 13) + 
+      scale_fill_manual(values = official_colors) + 
+      scale_shape_manual(
+        values = c(
+          "TRUE" = 24,
+          "FALSE" = 21
+        )
+      ) +
       theme_void() + 
       theme(
         legend.position = "none",
         panel.background = element_rect(fill = "black", colour = NA),
         plot.background = element_rect(fill = "black", colour = NA)
-        )
+        ) + 
+      scale_radius(range = c(1,10))
   })
   
   trains_map <- reactive({
