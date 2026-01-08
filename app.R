@@ -250,21 +250,21 @@ server <- function(input, output, session) {
       filter(direction == 1) #|> select(-direction)
   })
   
-  observeEvent(input$station, {
-    updateCheckboxGroupButtons(
-      session = session,
-      inputId = "commute_view",
-      selected = ""
-    )
-  })
+  # observeEvent(input$station, {
+  #   updateCheckboxGroupButtons(
+  #     session = session,
+  #     inputId = "commute_view",
+  #     selected = ""
+  #   )
+  # })
   
-  observeEvent(input$map_toggle, {
-    updateCheckboxGroupButtons(
-      session = session,
-      inputId = "commute_view",
-      selected = ""
-    )
-  })
+  # observeEvent(input$map_toggle, {
+  #   updateCheckboxGroupButtons(
+  #     session = session,
+  #     inputId = "commute_view",
+  #     selected = ""
+  #   )
+  # })
   
   observe({
     invalidateLater(1 * 30 * 60 * 1000, session) # hr, min, sec, ms
@@ -514,44 +514,98 @@ server <- function(input, output, session) {
       input_df |>
       filter(abs(est) <= 20) |> 
       arrange(desc(est)) |> 
-      mutate(adjust_est = ifelse(direction == 5, est, -1 * est) |> 
-               axis_converter())
+      mutate(
+        adjust_est = ifelse(direction == 5, est, -1 * est) |> 
+          axis_converter(),
+        y_value = paste0(direction, "_", dest))
       
     comm_plot <- commuting_data |> 
-      ggplot(aes(adjust_est, paste0(direction, "_", dest))) + 
-      geom_point(
-        aes(fill = line), 
-        color = "black",
-        shape = 21,
-        size = 7 * size_multiplier)
+      ggplot(aes(adjust_est, y_value)) + 
+      geom_vline(
+        xintercept = 0,
+        color = "white") +
+      ggplot2::annotate(
+        "label",
+        x = 0,
+        y = (length(unique(commuting_data$y_value)) + 1) / 2,
+        label = cta_stations_df[cta_stations_df$id4 == input$station,] |> pull(clean_label),
+        angle = 90,
+        color = "white",
+        fill = "black",
+        size = 4 * size_multiplier
+      ) +
+      scale_y_discrete()
+    
+    saveRDS(commuting_data, "commuting_data.Rds")
     
     if (the_direction != "north") {
       comm_plot <- comm_plot +
         geom_vline(
-          xintercept = 0, 
-          color = "white") + 
-        geom_vline(
           xintercept = .5, 
           color = "gray", 
           linetype = "dashed") + 
+        ggplot2::annotate(
+          "label",
+          x = 0.5,
+          y = (length(unique(commuting_data$y_value)) + 1) / 2,
+          label = "5 min",
+          angle = 90,
+          color = "gray",
+          linetype = "dashed",
+          fill = "black",
+          size = 4 * size_multiplier
+        ) +
         geom_vline(
           xintercept = 0.75, 
           color = "#555555", 
-          linetype = "dotted")
+          linetype = "dotted") +
+        ggplot2::annotate(
+          "label",
+          x = 0.75,
+          y = (length(unique(commuting_data$y_value)) + 1) / 2,
+          label = "10 min",
+          angle = 90,
+          color = "#555555",
+          linetype = "dotted",
+          fill = "black",
+          size = 4 * size_multiplier
+        )
     } 
     if (the_direction != "south") {
       comm_plot <- comm_plot +
-        geom_vline(
-          xintercept = 0, 
-          color = "white") + 
+        # geom_vline(
+        #   xintercept = 0, 
+        #   color = "white") + 
         geom_vline(
           xintercept = -.5, 
           color = "gray", 
           linetype = "dashed") + 
+        ggplot2::annotate(
+          "label",
+          x = -0.5,
+          y = (length(unique(commuting_data$y_value)) + 1) / 2,
+          label = "5 min",
+          angle = 90,
+          color = "gray",
+          linetype = "dashed",
+          fill = "black",
+          size = 4 * size_multiplier
+        ) +
         geom_vline(
           xintercept = -0.75, 
           color = "#555555", 
-          linetype = "dotted")
+          linetype = "dotted") +
+        ggplot2::annotate(
+          "label",
+          x = -0.75,
+          y = (length(unique(commuting_data$y_value)) + 1) / 2,
+          label = "10 min",
+          angle = 90,
+          color = "#555555",
+          linetype = "dotted",
+          fill = "black",
+          size = 4 * size_multiplier
+        )
     }
     
     if (the_direction == "south") {
@@ -566,6 +620,11 @@ server <- function(input, output, session) {
     }
     
     comm_plot + 
+      geom_point(
+        aes(fill = line), 
+        color = "black",
+        shape = 21,
+        size = 7 * size_multiplier) +
       geom_point(
         data = filter(commuting_data, est < 8.5), 
         aes(
