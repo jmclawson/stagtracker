@@ -196,7 +196,7 @@ ui <- tagList(
     conditionalPanel(
       condition = "input.map_toggle == '' && input.limit_line == 'i'",
       div(id = "comyuter", style = "clear: both;",
-          plotOutput("commuter"))),#, width = "100%", height = "225px"))),# 
+          plotOutput("commuter", width = "100%", height = "225px"))),# 
     conditionalPanel(
       condition = "input.map_toggle != ''",
       div(style = "float: center;",
@@ -494,7 +494,7 @@ server <- function(input, output, session) {
     out 
   }
   
-  output$commuter <- renderPlot(height = 150, width = 300, {
+  output$commuter <- renderPlot({#height = 150, width = 300, {
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
       the_direction <- "all"
       input_df <- train_times()
@@ -508,6 +508,8 @@ server <- function(input, output, session) {
     
     # saveRDS(input_df, "exported_commuter.Rds")
     
+    size_multiplier <- 1.8
+    
     commuting_data <- 
       input_df |>
       filter(abs(est) <= 20) |> 
@@ -520,7 +522,7 @@ server <- function(input, output, session) {
         aes(fill = line), 
         color = "black",
         shape = 21,
-        size = 7)
+        size = 7 * size_multiplier)
     
     if (the_direction != "north") {
       comm_plot <- comm_plot +
@@ -570,12 +572,12 @@ server <- function(input, output, session) {
           shape = est <= 3
           ), 
         color = "black",
-        size = 20) + 
+        size = 20 * size_multiplier) + 
       geom_text(
         data = filter(commuting_data, est < 8.5), 
         aes(label = round(est)), 
         color = "white", 
-        size = 13) + 
+        size = 13 * size_multiplier) + 
       scale_fill_manual(values = official_colors) + 
       scale_shape_manual(
         values = c(
@@ -588,8 +590,7 @@ server <- function(input, output, session) {
         legend.position = "none",
         panel.background = element_rect(fill = "black", colour = NA),
         plot.background = element_rect(fill = "black", colour = NA)
-        ) + 
-      scale_radius(range = c(1,10))
+        ) 
   })
   
   trains_map <- reactive({
