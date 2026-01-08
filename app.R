@@ -235,14 +235,12 @@ server <- function(input, output, session) {
   
   train_times_south <- reactive({
     train_times() |> 
-      filter(direction == 5) |> 
-      select(-direction) 
+      filter(direction == 5) #|> select(-direction) 
   })
   
   train_times_north <- reactive({
     train_times() |> 
-      filter(direction == 1) |> 
-      select(-direction)
+      filter(direction == 1) #|> select(-direction)
   })
   
   observeEvent(input$station, {
@@ -455,17 +453,34 @@ server <- function(input, output, session) {
   axis_converter <- function(x) {
     out <- numeric(length(x))
     
-    # less than 5 is first half
-    condition_1 <- x <= 5
+    ## Negative numbers
+    # 0 to -5 is first half
+    condition_n1 <- x < 0 & x >= -5
+    xn1 <- x[condition_n1]
+    out[condition_n1] <- (xn1/5) * 0.5
+    
+    # -6 to -10 is next quarter
+    condition_n2 <- x >= -10 & x < -5
+    xn2 <- x[condition_n2]
+    out[condition_n2] <- (((xn2 - -5) / 5) * 0.25) + -0.5
+    
+    # -10 to -20 is last quarter
+    condition_n3 <- x < -10
+    xn3 <- x[condition_n3]
+    out[condition_n3] <- (((xn3 - -10) / 10) * 0.25) + -0.75  
+    
+    ## Positive numbers
+    # 0 to 5 is first half
+    condition_1 <- x > 0 & x <= 5
     x1 <- x[condition_1]
     out[condition_1] <- (x1/5) * 0.5
     
-    # under 10 is next quarter
+    # 6 to 10 is next quarter
     condition_2 <- x <= 10 & x > 5
     x2 <- x[condition_2]
     out[condition_2] <- (((x2 - 5) / 5) * 0.25) + 0.5
     
-    # 10-20 is last half
+    # 10 to 20 is last quarter
     condition_3 <- x > 10
     x3 <- x[condition_3]
     out[condition_3] <- (((x3 - 10) / 10) * 0.25) + 0.75  
@@ -474,27 +489,61 @@ server <- function(input, output, session) {
   }
   
   output$commuter <- renderPlot({
+    if(direction_order[arrow_state() + 1] == direction_order[3]) {
+      the_direction <- "all"
+      input_df <- train_times()
+    } else if(direction_order[arrow_state() + 1] == direction_order[2]){
+      the_direction <- "north"
+      input_df <- train_times_north()
+    } else {
+      the_direction <- "south"
+      input_df <- train_times_south()
+    }
+    
+    saveRDS(input_df, "exported_commuter.Rds")
+    
     commuting_data <- 
-      train_times_south() |>
-      filter(est <= 20) |> 
-      mutate(adjust_est = axis_converter(est))
+      input_df |>
+      filter(abs(est) <= 20) |> 
+      mutate(adjust_est = ifelse(direction == 5, est, -1 * est) |> 
+               axis_converter())
       
-    commuting_data |> 
+    comm_plot <- commuting_data |> 
       ggplot(aes(adjust_est, dest)) + 
       geom_point(
         aes(color = line), 
-        size = 8) + 
-      geom_vline(
-        xintercept = 0, 
-        color = "white") + 
-      geom_vline(
-        xintercept = .5, 
-        color = "gray", 
-        linetype = "dashed") + 
-      geom_vline(
-        xintercept = 0.75, 
-        color = "darkgray", 
-        linetype = "dotted") + 
+        size = 8)
+    
+    if (the_direction != "north") {
+      comm_plot <- comm_plot +
+        geom_vline(
+          xintercept = 0, 
+          color = "white") + 
+        geom_vline(
+          xintercept = .5, 
+          color = "gray", 
+          linetype = "dashed") + 
+        geom_vline(
+          xintercept = 0.75, 
+          color = "#555555", 
+          linetype = "dotted")
+    } 
+    if (the_direction != "south") {
+      comm_plot <- comm_plot +
+        geom_vline(
+          xintercept = 0, 
+          color = "white") + 
+        geom_vline(
+          xintercept = -.5, 
+          color = "gray", 
+          linetype = "dashed") + 
+        geom_vline(
+          xintercept = -0.75, 
+          color = "#555555", 
+          linetype = "dotted")
+    }
+    
+    comm_plot + 
       geom_point(
         data = filter(commuting_data, est < 6), 
         aes(color = line), 
