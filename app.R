@@ -134,6 +134,7 @@ ui <- tagList(
     ),
     uiOutput("dynamic_css"),
     fullscreen_all(click_id = "timetable", bg_color = "black"),
+    fullscreen_all(click_id = "commuter", bg_color = "black"),
     # htmlOutput("bottom_bar"),
     div(
       id = "bottom_bar",
@@ -176,12 +177,12 @@ ui <- tagList(
           div(
             style = "float: right;",
             # checkboxGroupButtons(
-            #   inputId = "limit_line",
+            #   inputId = "commute_view",
             #   label = "",
             #   choices = c(commute_label)
             # ),
             checkboxGroupButtons(
-              inputId = "limit_line",
+              inputId = "commute_view",
               label = "",
               choices = c("&#x2691;" = "i")
             )
@@ -190,11 +191,11 @@ ui <- tagList(
       )
     ),
     conditionalPanel(
-      condition = "input.map_toggle == '' && input.limit_line != 'i'",
+      condition = "input.map_toggle == '' && input.commute_view != 'i'",
       div(id = "tymetable", style = "clear: both;",
         htmlOutput("timetable", width = "90%"))),
     conditionalPanel(
-      condition = "input.map_toggle == '' && input.limit_line == 'i'",
+      condition = "input.map_toggle == '' && input.commute_view == 'i'",
       div(id = "comyuter", style = "clear: both;",
           plotOutput("commuter", width = "100%", height = "225px"))),# 
     conditionalPanel(
@@ -231,7 +232,7 @@ server <- function(input, output, session) {
         est = interval(now(), arriving) / dminutes(1)) |> 
       arrange(est)
     
-    if (commute_label %in% input$limit_line) {
+    if (commute_label %in% input$commute_view) {
      the_df <- the_df |> 
        filter(line == commute)
     }
@@ -252,7 +253,7 @@ server <- function(input, output, session) {
   observeEvent(input$station, {
     updateCheckboxGroupButtons(
       session = session,
-      inputId = "limit_line",
+      inputId = "commute_view",
       selected = ""
     )
   })
@@ -260,7 +261,7 @@ server <- function(input, output, session) {
   observeEvent(input$map_toggle, {
     updateCheckboxGroupButtons(
       session = session,
-      inputId = "limit_line",
+      inputId = "commute_view",
       selected = ""
     )
   })
@@ -271,14 +272,15 @@ server <- function(input, output, session) {
       # weekday morns, limit to Red
       updateCheckboxGroupButtons(
         session = session,
-        inputId = "limit_line",
-        selected = commute_label
+        inputId = "commute_view",
+        selected = "i"
       )
+      arrow_state <- reactiveVal(0) 
     } else if (input$station == home_station && current_hour() %in% 19:23) {
       # evenings, reset the limit
       updateCheckboxGroupButtons(
         session = session,
-        inputId = "limit_line",
+        inputId = "commute_view",
         selected = ""
       )
     }
@@ -304,7 +306,7 @@ server <- function(input, output, session) {
   
   style_timetable_gt <- function(.data){
     
-    if (commute_label %in% input$limit_line) {
+    if (commute_label %in% input$commute_view) {
       .data <- .data |> 
         filter(row_number() <= show_rows * .6)
     } else {
@@ -505,8 +507,6 @@ server <- function(input, output, session) {
       the_direction <- "south"
       input_df <- train_times_south()
     }
-    
-    # saveRDS(input_df, "exported_commuter.Rds")
     
     size_multiplier <- 1.8
     
