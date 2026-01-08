@@ -190,7 +190,7 @@ ui <- tagList(
     conditionalPanel(
       condition = "input.map_toggle == '' && input.limit_line == 'i'",
       div(id = "comyuter", style = "clear: both;",
-          plotOutput("commuter", width = "100%"))),# platypus adding commute viewer
+          plotOutput("commuter", width = "100%", height = "225px"))),# platypus adding commute viewer
     conditionalPanel(
       condition = "input.map_toggle != ''",
       div(style = "float: center;",
