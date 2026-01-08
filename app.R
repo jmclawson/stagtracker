@@ -494,7 +494,7 @@ server <- function(input, output, session) {
     out 
   }
   
-  output$commuter <- renderPlot(height = 170, width = 300, {
+  output$commuter <- renderPlot(height = 150, width = 300, {
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
       the_direction <- "all"
       input_df <- train_times()
