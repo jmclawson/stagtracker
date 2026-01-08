@@ -112,9 +112,14 @@ ui <- tagList(
       background-color: #445;
       color: #aaa
     }
+    
+    .comyuter div#commuter {
+      width: 690px !important;
+    }
       
-    .comyuter img {
+    #commuter img {
       width: 100% !important;
+      height: auto !important;
     }
                        
                        
@@ -191,7 +196,7 @@ ui <- tagList(
     conditionalPanel(
       condition = "input.map_toggle == '' && input.limit_line == 'i'",
       div(id = "comyuter", style = "clear: both;",
-          plotOutput("commuter", width = "100%", height = "225px"))),# 
+          plotOutput("commuter"))),#, width = "100%", height = "225px"))),# 
     conditionalPanel(
       condition = "input.map_toggle != ''",
       div(style = "float: center;",
