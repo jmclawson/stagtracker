@@ -19,7 +19,7 @@ if (file.exists("my_key.R")) {
   source("my_key.R")
 }
 
-christmas_train <- 1225# testing: c(1225, 410, 820, 804, 821, 811, 404, 516, 906, 813, 408)
+christmas_train <- 1225
 
 official_colors <- c(
   Red = "#C60C30",
@@ -163,19 +163,33 @@ ui <- tagList(
           condition = "input.station == input.my_station & input.map_toggle == ''",
           div(
             style = "float: right;",
+            # checkboxGroupButtons(
+            #   inputId = "limit_line",
+            #   label = "",
+            #   choices = c(commute_label)
+            # ),
+            # radioGroupButtons(
+            #   inputId = "limit_line",
+            #   label = "",
+            #   choices = c(commute_label, "i")# platypus adding commute viewer
+            # )
             checkboxGroupButtons(
               inputId = "limit_line",
               label = "",
-              choices = c(commute_label)
+              choices = c("i")# platypus adding commute viewer
             )
           )
         ),
       )
     ),
     conditionalPanel(
-      condition = "input.map_toggle == ''",
+      condition = "input.map_toggle == '' && input.limit_line != 'i'",
       div(id = "tymetable", style = "clear: both;",
         htmlOutput("timetable", width = "90%"))),
+    conditionalPanel(
+      condition = "input.map_toggle == '' && input.limit_line == 'i'",
+      div(id = "comyuter", style = "clear: both;",
+          plotOutput("commuter", width = "100%"))),# platypus adding commute viewer
     conditionalPanel(
       condition = "input.map_toggle != ''",
       div(style = "float: center;",
@@ -404,7 +418,7 @@ server <- function(input, output, session) {
         tags$style(HTML(paste0(
           "#bottom_bar {position: absolute; bottom: ", sample(5:7, size = 1), "px; top: unset; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
           #mapit {margin-top: 0px;}
-          #tymetable {margin-top: -12px; position: absolute; bottom: unset;}"
+          #tymetable, #comyuter {margin-top: -12px; position: absolute; bottom: unset;}"
         )))
       )
     } else {
@@ -413,7 +427,7 @@ server <- function(input, output, session) {
         tags$style(HTML(paste0(
           "#bottom_bar {position: absolute; bottom: unset; top: ", sample(0:3, size = 1), "px; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: -24px;}
           #mapit {margin-top: 41px;}
-          #tymetable {position: absolute; bottom: 5px; top: unset;}"
+          #tymetable, #comyuter {position: absolute; bottom: 5px; top: unset;}"
         )))
       )
     }
@@ -430,12 +444,72 @@ server <- function(input, output, session) {
     input |> 
       mutate(dest = ifelse(rn %in% christmas_train, 
                            paste(dest, 
-                                 # html("&#x1f384; &#x1f384;&#xFE0E; &#10052; &#10052;&#xFE0E;"), 
                                  html("<img src='tree.png' width='34px' height='34px'>")
                                  ), dest)) |> 
       select(line, dest, est) |> 
       style_timetable_gt() |> 
       gt::fmt_markdown(columns = "dest")
+  })
+  
+  axis_converter <- function(x) {
+    out <- numeric(length(x))
+    
+    # less than 5 is first half
+    condition_1 <- x <= 5
+    x1 <- x[condition_1]
+    out[condition_1] <- (x1/5) * 0.5
+    
+    # under 10 is next quarter
+    condition_2 <- x <= 10 & x > 5
+    x2 <- x[condition_2]
+    out[condition_2] <- (((x2 - 5) / 5) * 0.25) + 0.5
+    
+    # 10-20 is last half
+    condition_3 <- x > 10
+    x3 <- x[condition_3]
+    out[condition_3] <- (((x3 - 10) / 10) * 0.25) + 0.75  
+    
+    out 
+  }
+  
+  output$commuter <- renderPlot({
+    commuting_data <- 
+      train_times_south() |>
+      filter(est <= 20) |> 
+      mutate(adjust_est = axis_converter(est))
+      
+    commuting_data |> 
+      ggplot(aes(adjust_est, dest)) + 
+      geom_point(
+        aes(color = line), 
+        size = 8) + 
+      geom_vline(
+        xintercept = 0, 
+        color = "white") + 
+      geom_vline(
+        xintercept = .5, 
+        color = "gray", 
+        linetype = "dashed") + 
+      geom_vline(
+        xintercept = 0.75, 
+        color = "darkgray", 
+        linetype = "dotted") + 
+      geom_point(
+        data = filter(commuting_data, est < 6), 
+        aes(color = line), 
+        size = 20) + 
+      geom_text(
+        data = filter(commuting_data, est < 6), 
+        aes(label = round(est)), 
+        color = "white", 
+        size = 10) + 
+      scale_color_manual(values = official_colors) + 
+      theme_void() + 
+      theme(
+        legend.position = "none",
+        panel.background = element_rect(fill = "black", colour = NA),
+        plot.background = element_rect(fill = "black", colour = NA)
+        )
   })
   
   trains_map <- reactive({
@@ -528,14 +602,6 @@ server <- function(input, output, session) {
         weight = 1,
         fillColor = ~ hex_color,
         fillOpacity = 0.7) |> 
-      # addLabelOnlyMarkers(
-      #   data = cta_stations,
-      #   lng = get_sf_n(n = 1, id = as.numeric(input$station) - 40000),
-      #   lat = get_sf_n(n = 2, id = as.numeric(input$station) - 40000),
-      #   label = cta_stations |> 
-      #     filter(station_id == as.numeric(input$station) - 40000) |> 
-      #     pull(longname) |> pluck(1)
-      # ) |> 
       addMarkers(
         data = train_times() |> mutate(across(c(lat, lon), as.numeric)),
         lat = ~ lat,
