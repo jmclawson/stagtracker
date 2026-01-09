@@ -274,8 +274,8 @@ server <- function(input, output, session) {
         session = session,
         inputId = "commute_view",
         selected = "i"
-      )
-      arrow_state <- reactiveVal(0) 
+      )# 
+      arrow_state(0) 
     } else if (input$station == home_station && current_hour() %in% 19:23) {
       # evenings, reset the limit
       updateCheckboxGroupButtons(
@@ -517,7 +517,9 @@ server <- function(input, output, session) {
       mutate(
         adjust_est = ifelse(direction == 5, est, -1 * est) |> 
           axis_converter(),
-        y_value = paste0(direction, "_", dest))
+        y_value = paste0(direction, "_", dest),
+        est_label = round(est) |> 
+          stringr::str_replace_all("\\b0\\b", "-"))
       
     comm_plot <- commuting_data |> 
       ggplot(aes(adjust_est, y_value)) + 
@@ -621,30 +623,44 @@ server <- function(input, output, session) {
     
     comm_plot + 
       geom_point(
+        # data = filter(commuting_data, est >= 8.5), 
         aes(fill = line), 
         color = "black",
         shape = 21,
         size = 7 * size_multiplier) +
       geom_point(
-        data = filter(commuting_data, est < 8.5), 
+        data = filter(commuting_data, est < 8.5, round(est) > 1), 
+        aes(
+          fill = line
+          # shape = est <= 3,
+          ), 
+        size = 20 * size_multiplier,
+        shape = 21,
+        color = "black") + 
+      geom_point(
+        data = filter(commuting_data, round(est) <= 1), 
         aes(
           fill = line,
-          shape = est <= 3
-          ), 
-        color = "black",
-        size = 20 * size_multiplier) + 
+          # shape = est <= 3,
+        ), 
+        size = 7 * size_multiplier, 
+        shape = 21,
+        color = "black") + 
       geom_text(
-        data = filter(commuting_data, est < 8.5), 
-        aes(label = round(est)), 
+        data = filter(commuting_data, est < 8.5, round(est) > 1), 
+        aes(label = est_label), 
         color = "white", 
         size = 13 * size_multiplier) + 
+      geom_text(
+        data = filter(commuting_data, round(est) <= 1), 
+        aes(label = est_label), 
+        color = "white", 
+        size = 5 * size_multiplier) + 
       scale_fill_manual(values = official_colors) + 
-      scale_shape_manual(
-        values = c(
-          "TRUE" = 24,
-          "FALSE" = 21
-        )
-      ) +
+      # scale_shape_manual(
+      #   values = c(
+      #     "TRUE" = 24,
+      #     "FALSE" = 21)) +
       theme_void() + 
       theme(
         legend.position = "none",
