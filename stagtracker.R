@@ -9,7 +9,6 @@ library(dplyr)
 library(tidyr)
 library(gt)
 library(ggplot2)
-library(ggimage)
 library(leaflet)
 library(geojsonsf)
 library(sf)
@@ -243,46 +242,47 @@ make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img 
 
 plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christmas) {
   station <- x$staId[1]
+  use_img <- isTRUE(requireNamespace("ggimage", quietly=TRUE))
   axis_converter <- function(x, limit = 20) {
     out <- numeric(length(x))
-    
+
     ## Negative numbers
     # 0 to -5 is first half
-    condition_n1 <- x < 0 & x >= -(limit/4)
+    condition_n1 <- x < 0 & x >= -(limit / 4)
     xn1 <- x[condition_n1]
-    out[condition_n1] <- (xn1/(limit/4)) * 0.5
-    
+    out[condition_n1] <- (xn1 / (limit / 4)) * 0.5
+
     # -6 to -10 is next quarter
-    condition_n2 <- x >= -(limit/2) & x < -(limit/4)
+    condition_n2 <- x >= -(limit / 2) & x < -(limit / 4)
     xn2 <- x[condition_n2]
-    out[condition_n2] <- (((xn2 - -(limit/4)) / (limit/4)) * 0.25) + -0.5
-    
+    out[condition_n2] <- (((xn2 - -(limit / 4)) / (limit / 4)) * 0.25) + -0.5
+
     # -10 to -20 is last quarter
-    condition_n3 <- x < -(limit/2)
+    condition_n3 <- x < -(limit / 2)
     xn3 <- x[condition_n3]
-    out[condition_n3] <- (((xn3 - -(limit/2)) / (limit/2)) * 0.25) + -0.75  
-    
+    out[condition_n3] <- (((xn3 - -(limit / 2)) / (limit / 2)) * 0.25) + -0.75
+
     ## Positive numbers
     # 0 to 5 is first half
-    condition_1 <- x > 0 & x <= (limit/4)
+    condition_1 <- x > 0 & x <= (limit / 4)
     x1 <- x[condition_1]
-    out[condition_1] <- (x1/(limit/4)) * 0.5
-    
+    out[condition_1] <- (x1 / (limit / 4)) * 0.5
+
     # 6 to 10 is next quarter
-    condition_2 <- x <= (limit/2) & x > (limit/4)
+    condition_2 <- x <= (limit / 2) & x > (limit / 4)
     x2 <- x[condition_2]
-    out[condition_2] <- (((x2 - (limit/4)) / (limit/4)) * 0.25) + 0.5
-    
+    out[condition_2] <- (((x2 - (limit / 4)) / (limit / 4)) * 0.25) + 0.5
+
     # 10 to 20 is last quarter
-    condition_3 <- x > (limit/2)
+    condition_3 <- x > (limit / 2)
     x3 <- x[condition_3]
-    out[condition_3] <- (((x3 - (limit/2)) / (limit/2)) * 0.25) + 0.75  
-    
-    out 
+    out[condition_3] <- (((x3 - (limit / 2)) / (limit / 2)) * 0.25) + 0.75
+
+    out
   }
-  
+
   size_multiplier <- visibility
-  
+
   if (length(unique(x$direction)) == 1 && unique(x$direction) == 1) {
     the_direction <- "north"
   } else if (length(unique(x$direction)) == 1 && unique(x$direction) == 5) {
@@ -292,46 +292,49 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
   } else {
     stop("Something is wrong with direction")
   }
-  
-  commuting_data <- 
+
+  commuting_data <-
     x |>
-    filter(abs(est) <= max) |> 
-    arrange(desc(est)) |> 
+    filter(abs(est) <= max) |>
+    arrange(desc(est)) |>
     mutate(
-      adjust_est = ifelse(direction == 5, est, -1 * est) |> 
+      adjust_est = ifelse(direction == 5, est, -1 * est) |>
         axis_converter(limit = max),
       y_value = paste0(direction, "_", dest),
-      est_label = round(est) |> 
-        str_replace_all("\\b0\\b", "-"))
-  
-  comm_plot <- commuting_data |> 
-    ggplot(aes(adjust_est, y_value)) + 
+      est_label = round(est) |>
+        str_replace_all("\\b0\\b", "-")
+    )
+
+  comm_plot <- commuting_data |>
+    ggplot(aes(adjust_est, y_value)) +
     geom_vline(
       xintercept = 0,
-      color = "white") +
+      color = "white"
+    ) +
     annotate(
       "label",
       x = 0,
       y = (length(unique(commuting_data$y_value)) + 1) / 2,
-      label = cta_stations_df[cta_stations_df$id4 == station,] |> pull(clean_label),
+      label = cta_stations_df[cta_stations_df$id4 == station, ] |> pull(clean_label),
       angle = 90,
       color = "white",
       fill = "black",
       size = 4 * size_multiplier
     ) +
     scale_y_discrete()
-  
+
   if (the_direction != "north") {
     comm_plot <- comm_plot +
       geom_vline(
-        xintercept = .5, 
-        color = "gray", 
-        linetype = "dashed") + 
+        xintercept = .5,
+        color = "gray",
+        linetype = "dashed"
+      ) +
       annotate(
         "label",
         x = 0.5,
         y = (length(unique(commuting_data$y_value)) + 1) / 2,
-        label = paste(round(max/4), "min"),
+        label = paste(round(max / 4), "min"),
         angle = 90,
         color = "gray",
         linetype = "dashed",
@@ -339,47 +342,15 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
         size = 4 * size_multiplier
       ) +
       geom_vline(
-        xintercept = 0.75, 
-        color = "#555555", 
-        linetype = "dotted") +
+        xintercept = 0.75,
+        color = "#555555",
+        linetype = "dotted"
+      ) +
       annotate(
         "label",
         x = 0.75,
         y = (length(unique(commuting_data$y_value)) + 1) / 2,
-        label = paste(round(max/2), "min"),
-        angle = 90,
-        color = "#555555",
-        linetype = "dotted",
-        fill = "black",
-        size = 4 * size_multiplier
-      )
-  } 
-  if (the_direction != "south") {
-    comm_plot <- comm_plot +
-      geom_vline(
-        xintercept = -.5, 
-        color = "gray", 
-        linetype = "dashed") + 
-      annotate(
-        "label",
-        x = -0.5,
-        y = (length(unique(commuting_data$y_value)) + 1) / 2,
-        label = paste(round(max/4), "min"),
-        angle = 90,
-        color = "gray",
-        linetype = "dashed",
-        fill = "black",
-        size = 4 * size_multiplier
-      ) +
-      geom_vline(
-        xintercept = -0.75, 
-        color = "#555555", 
-        linetype = "dotted") +
-      annotate(
-        "label",
-        x = -0.75,
-        y = (length(unique(commuting_data$y_value)) + 1) / 2,
-        label = paste(round(max/2), "min"),
+        label = paste(round(max / 2), "min"),
         angle = 90,
         color = "#555555",
         linetype = "dotted",
@@ -387,7 +358,42 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
         size = 4 * size_multiplier
       )
   }
-  
+  if (the_direction != "south") {
+    comm_plot <- comm_plot +
+      geom_vline(
+        xintercept = -.5,
+        color = "gray",
+        linetype = "dashed"
+      ) +
+      annotate(
+        "label",
+        x = -0.5,
+        y = (length(unique(commuting_data$y_value)) + 1) / 2,
+        label = paste(round(max / 4), "min"),
+        angle = 90,
+        color = "gray",
+        linetype = "dashed",
+        fill = "black",
+        size = 4 * size_multiplier
+      ) +
+      geom_vline(
+        xintercept = -0.75,
+        color = "#555555",
+        linetype = "dotted"
+      ) +
+      annotate(
+        "label",
+        x = -0.75,
+        y = (length(unique(commuting_data$y_value)) + 1) / 2,
+        label = paste(round(max / 2), "min"),
+        angle = 90,
+        color = "#555555",
+        linetype = "dotted",
+        fill = "black",
+        size = 4 * size_multiplier
+      )
+  }
+
   if (the_direction == "south") {
     comm_plot <- comm_plot +
       scale_x_continuous(limits = c(-0.01, 1))
@@ -398,63 +404,88 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
     comm_plot <- comm_plot +
       scale_x_continuous(limits = c(-1, 1))
   }
-  
-  
-  comm_plot + 
+
+
+  comm_plot <- comm_plot +
     geom_point(
       # data = filter(commuting_data, !rn %in% christmas_train),
-      aes(fill = line), 
+      aes(fill = line),
       color = "black",
       shape = 21,
-      size = 7 * size_multiplier) +
-    geom_image(
-      data = filter(commuting_data, rn %in% christmas_train),
-      image = "tree.png",
-      size = 0.06) +
+      size = 7 * size_multiplier
+    )
+
+  if (use_img) {
+    comm_plot <- comm_plot +
+      ggimage::geom_image(
+        data = filter(commuting_data, rn %in% christmas_train),
+        image = "tree.png",
+        size = 0.06
+      )
+  }
+
+  comm_plot <- comm_plot +
     geom_point(
-      data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1), 
+      data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1),
       aes(
         fill = line
         # shape = est <= 3,
-      ), 
+      ),
       size = 20 * size_multiplier,
       shape = 21,
-      color = "black") + 
-    geom_image(
-      data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1, rn %in% christmas_train), 
-      image = "tree.png",
-      size = 0.18) +
+      color = "black"
+    )
+
+  if (use_img) {
+    comm_plot <- comm_plot +
+      ggimage::geom_image(
+        data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1, rn %in% christmas_train),
+        image = "tree.png",
+        size = 0.18
+      )
+  }
+
+  comm_plot <- comm_plot +
     geom_point(
-      data = filter(commuting_data, round(est) <= 1), 
+      data = filter(commuting_data, round(est) <= 1),
       aes(
         fill = line,
         # shape = est <= 3,
-      ), 
-      size = 7 * size_multiplier, 
+      ),
+      size = 7 * size_multiplier,
       shape = 21,
-      color = "black") + 
-    geom_image(
-      data = filter(commuting_data, rn %in% christmas_train, round(est) <= 1),
-      image = "tree.png",
-      size = 0.06) +
+      color = "black"
+    )
+
+  if (use_img) {
+    comm_plot <- comm_plot +
+      ggimage::geom_image(
+        data = filter(commuting_data, rn %in% christmas_train, round(est) <= 1),
+        image = "tree.png",
+        size = 0.06
+      )
+  }
+
+  comm_plot <- comm_plot +
     geom_text(
-      data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1), 
-      aes(label = est_label), 
-      color = "white", 
-      size = 13 * size_multiplier) + 
+      data = filter(commuting_data, est < (1 + 0.375 * max), round(est) > 1),
+      aes(label = est_label),
+      color = "white",
+      size = 13 * size_multiplier
+    ) +
     geom_text(
-      data = filter(commuting_data, round(est) <= 1), 
-      aes(label = est_label), 
-      color = "white", 
-      size = 5 * size_multiplier) + 
-    scale_fill_manual(values = official_colors) + 
-    theme_void() + 
+      data = filter(commuting_data, round(est) <= 1),
+      aes(label = est_label),
+      color = "white",
+      size = 5 * size_multiplier
+    ) +
+    scale_fill_manual(values = official_colors) +
+    theme_void() +
     theme(
       legend.position = "none",
       panel.background = element_rect(fill = "black", colour = NA),
       plot.background = element_rect(fill = "black", colour = NA)
-    ) 
-  
+    )
 }
 
 plotly_trains <- function(x, max = 20, visibility = 1.8){
