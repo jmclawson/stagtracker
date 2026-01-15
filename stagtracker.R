@@ -486,6 +486,8 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
       panel.background = element_rect(fill = "black", colour = NA),
       plot.background = element_rect(fill = "black", colour = NA)
     )
+  
+  comm_plot
 }
 
 plotly_trains <- function(x, max = 20, visibility = 1.8){
