@@ -122,7 +122,7 @@ limit_trains <- function(x, direction = c("northbound", "southbound")) {
   x
 }
 
-make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img = TRUE) {
+make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img = FALSE) {
   if (!is.null(rows)) {
     x <- x |> 
       filter(row_number() <= rows)
@@ -134,7 +134,8 @@ make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img 
     tree_64 <- gt:::get_image_uri(gt:::path_expand("tree.png"))
     marker <- paste0("<img src='", tree_64, "' width='21px' height='21px' align='center'>")
   } else {
-    marker <- as.character(fontawesome::fa("candy-cane"))
+    # marker <- as.character(fontawesome::fa("candy-cane"))
+    marker <- "*"
   }
   
   x <- x |> 
