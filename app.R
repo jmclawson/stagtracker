@@ -1,3 +1,5 @@
+library(httr2)
+library(bslib)
 library(shiny)
 library(shinyWidgets)
 library(shinyfullscreen)
@@ -8,6 +10,22 @@ ui <- tagList(
   tags$head(tags$style("
     body { 
       overflow: hidden;
+    }
+    
+    .container {
+      position: relative;
+      max-width: 458px !important;
+      width: 457px;
+      height: 274px;
+      border: 0px solid green;
+      padding: 0 !important;
+    }
+    
+    #bottom_bar {
+      position: absolute; 
+      z-index: 200;
+      width: 100vw; 
+      max-width: 457px !important; 
     }
     
     .inner.show::-webkit-scrollbar {
@@ -36,8 +54,50 @@ ui <- tagList(
       color: #aaa
     }
     
-    .comyuter div#commuter {
-      width: 690px !important;
+    #tymetable div.shiny-output-error-validation, #comyuter div.shiny-output-error-validation, #comyuter div.shiny-output-error-validation::before, #comyuter div.shiny-output-error::before, #mapit + div.shiny-output-error-validation {
+    position: absolute;
+    top: 130px !important;
+    bottom: 130px !important;
+    text-align: center !important;
+    width: 457px !important;
+    }
+    
+    #tymetable:has(div.shiny-output-error-validation), #comyuter:has(div.shiny-output-error-validation), #comyuter:has(div.shiny-output-error) {
+      margin-top: unset !important; 
+      position: unset !important; 
+      bottom: unset !important;
+    }
+    
+    #tymetable {
+      width: 100%;
+      max-width: 458px !important;
+    }
+    
+    #tymetable .rt-tr-group, #tymetable .rt-td, #tymetable .rt-table, #tymetable .rt-pagination {
+      border-top-style: hidden;
+      border-right-style: none;
+      border-bottom-style: hidden;
+      border-left-style: none;
+    }
+    
+    .rt-table {
+      color: white;
+      text-shadow: 1px 1px 3px #000000;
+    }
+    
+    .rt-thead {
+      display: none !important;
+    }
+    
+    .rt-pagination-info {
+      display: none;
+    }
+    
+    .rt-pagination {
+      text-align: center;
+      display: block !important;
+      color: white;
+      background-color: black;
     }
       
     #commuter img {
@@ -49,7 +109,7 @@ ui <- tagList(
                        ")),
   fixedPage(
     title = "Stagtracker",
-    theme = bslib::bs_theme(
+    theme = bs_theme(
       version = 5L,
       bg = "black",
       fg = "white",
@@ -85,7 +145,7 @@ ui <- tagList(
           textInput("my_station", "", home_station)
         ),
         div(
-          style = "float: right;",
+          style = "float: right; z-index: 100;",
           checkboxGroupButtons(
             inputId = "map_toggle",
             label = "",
@@ -96,7 +156,7 @@ ui <- tagList(
         conditionalPanel(
           condition = "input.map_toggle == ''",
           div(
-            style = "float: right;",
+            style = "float: left;",
             checkboxGroupButtons(
               inputId = "commute_view",
               label = "",
@@ -126,7 +186,14 @@ server <- function(input, output, session) {
   # Load the data ------------------------------------------
   train_times <- reactive({
     invalidateLater(1 * 60 * 1000, session)
+    
     starting_data <- get_trains(station = input$station)
+    
+    # Handle possible connection errors
+    validate(
+      need(is_online(), "\nThere's a problem with the internet connection."),
+      need(starting_data, "CTA data cannot be retrieved.")
+    )
     
     if(direction_order[arrow_state() + 1] == direction_order[3]) {
       result <- starting_data
@@ -142,8 +209,13 @@ server <- function(input, output, session) {
   
   # UI Outputs ---------------------------------------------
   output$timetable <- renderUI({
-    train_times() |> 
-      make_timetable(rows = 5)
+    if (nrow(train_times()) <= 5) {
+      train_times() |> 
+        make_timetable(pages = FALSE)
+    } else {
+      train_times() |> 
+        make_timetable(page_size = 4)
+    }
   })
   
   output$commuter <- renderPlot({
@@ -228,7 +300,7 @@ server <- function(input, output, session) {
       # buttons at bottom
       tags$head(
         tags$style(HTML(paste0(
-          "#bottom_bar {position: absolute; bottom: ", sample(5:7, size = 1), "px; top: unset; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
+          "#bottom_bar {bottom: ", sample(5:7, size = 1), "px; top: unset; padding-right: ", sample(23:26, size = 1), "px; margin-top: unset;}
           #mapit {margin-top: 0px;}
           #tymetable, #comyuter {margin-top: -12px; position: absolute; bottom: unset;}"
         )))
@@ -237,7 +309,7 @@ server <- function(input, output, session) {
       # buttons at top
       tags$head(
         tags$style(HTML(paste0(
-          "#bottom_bar {position: absolute; bottom: unset; top: ", sample(0:3, size = 1), "px; width: 100vw; padding-right: ", sample(23:26, size = 1), "px; margin-top: -24px;}
+          "#bottom_bar {bottom: unset; top: ", sample(0:3, size = 1), "px; padding-right: ", sample(23:26, size = 1), "px; margin-top: -24px;}
           #mapit {margin-top: 41px;}
           #tymetable, #comyuter {position: absolute; bottom: 5px; top: unset;}"
         )))

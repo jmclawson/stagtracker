@@ -77,15 +77,23 @@ cta_stations_df <- cta_stations |>
 #     .default = "center"
 #   ))
 
-get_trains <- function(key = api_key, station = home_station) {
+get_trains <- function(key = api_key, station = home_station, num_trains = 20) {
   full_query <- url_modify_query(
     "https://lapi.transitchicago.com/api/1.0/ttarrivals.aspx",
     key = key,
-    max = 20,
+    max = num_trains,
     mapid = station)
   
-  the_df <- full_query |> 
-    read_xml() |> 
+  api_return <- suppressWarnings(
+      possibly(\(x) read_xml(full_query))()
+    )
+  
+  # Check connection to API
+  if (is.null(api_return) || length(xml_find_all(api_return, "//errCd")) > 0 & xml_double(xml_find_all(api_return, "//errCd")) != 0) {
+    return(NULL)
+  }
+  
+  the_df <- api_return |> 
     xml_find_all("//eta") |> 
     map_dfr(\(tr) {
       kids <- xml_children(tr)
@@ -122,7 +130,7 @@ limit_trains <- function(x, direction = c("northbound", "southbound")) {
   x
 }
 
-make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img = FALSE) {
+make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img = FALSE, pages = TRUE, page_size = 5) {
   if (!is.null(rows)) {
     x <- x |> 
       filter(row_number() <= rows)
@@ -167,7 +175,17 @@ make_timetable <- function(x, rows = NULL, christmas_train = christmas, use_img 
   
   df_gt <- x |> 
     select(line, dest, estimated) |> 
-    gt() |> 
+    gt()
+  
+  if (pages) {
+    df_gt <- df_gt |> 
+      opt_interactive(
+        page_size_default = page_size, 
+        use_compact_mode = TRUE,
+        pagination_type = "simple")
+  }
+  
+  df_gt <- df_gt |> 
     tab_style(
       locations = cells_body(rows = line == "Red"), 
       style = list(cell_fill("#C60C30"))) |>
@@ -305,7 +323,24 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
       est_label = round(est) |>
         str_replace_all("\\b0\\b", "-")
     )
-
+  
+  station_label <- cta_stations_df |> 
+    {\(x) x[x$id4 == station, ]}()|> 
+    pull(clean_label) |>
+    stringr::str_replace_all(
+      "Washington Library", "Wash. Lib."
+    ) |> 
+    {\(x) ifelse(
+      nchar(x) <= 20, 
+      x, 
+      substr(x, 1, 18))}() |> 
+    stringr::str_replace_all(
+      "D$", "Dist."
+    ) |> 
+    stringr::str_remove_all("P$") |> 
+    stringr::str_remove_all("[-]$") |> 
+    stringr::str_squish()
+    
   comm_plot <- commuting_data |>
     ggplot(aes(adjust_est, y_value)) +
     geom_vline(
@@ -316,7 +351,7 @@ plot_trains <- function(x, max = 20, visibility = 1.8, christmas_train = christm
       "label",
       x = 0,
       y = (length(unique(commuting_data$y_value)) + 1) / 2,
-      label = cta_stations_df[cta_stations_df$id4 == station, ] |> pull(clean_label),
+      label = station_label,
       angle = 90,
       color = "white",
       fill = "black",
